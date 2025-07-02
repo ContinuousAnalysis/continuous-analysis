@@ -1,0 +1,78 @@
+name: PyMOP Auto Runner
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Python Dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Debug Docker Path
+        run: |
+          echo "PATH is: $PATH"
+          which docker
+          docker --version
+
+      - name: Run PyMOP on updated projects
+        id: run_pymop
+        shell: bash
+        run: |
+          cd ~/pymop-shadow-observer
+          python3 scripts/track_changes.py
+          # Check if changed_projects.txt exists
+          if [ -f changed_projects.txt ]; then
+            echo "changes_detected=true" >> $GITHUB_OUTPUT
+          else
+            echo "changes_detected=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Parse PyMOP Output for Violations
+        if: steps.run_pymop.outputs.changes_detected == 'true'
+        run: |
+          cd ~/pymop-shadow-observer
+          python3 scripts/parse_pymop_output.py
+
+      - name: Upload Violation Reports
+        if: steps.run_pymop.outputs.changes_detected == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pymop-violations-${{ github.run_id }}
+          path: |
+            ~/pymop-shadow-observer/pymop_results_*.csv
+            ~/pymop-shadow-observer/pymop_over_time_results.csv
+            ~/pymop-shadow-observer/changed_projects.txt
+          retention-days: 30
+
+      - name: Compare PyMOP Output with Previous Run and Report New Violations
+        if: steps.run_pymop.outputs.changes_detected == 'true'
+        run: |
+          cd ~/pymop-shadow-observer
+          python3 scripts/track_violations.py
+
+      - name: Clean up unneeded files
+        if: steps.run_pymop.outputs.changes_detected == 'true'
+        run: |
+          cd ~/pymop-shadow-observer
+          rm -f pymop_results_*.csv
+          rm -f changed_projects.txt
