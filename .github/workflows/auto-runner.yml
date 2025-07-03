@@ -24,6 +24,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Checkout Auto-PyMOP Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ContinuousAnalysis/auto-pymop
+          path: auto-pymop
+
       - name: Debug Directory Structure
         run: |
           echo "Current working directory:"
