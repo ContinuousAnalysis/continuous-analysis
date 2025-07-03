@@ -43,6 +43,17 @@ jobs:
 
       - name: Checkout Testing Repository
         uses: actions/checkout@v4
+        with:
+          repository: ${{ inputs.project }}
+          path: ${{ inputs.project }}
+
+      - name: Debug Testing Repository
+        run: |
+          echo "Current working directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
+          echo "Auto-pymop directory contents (if exists):"
 
       - name: Run PyMOP on Testing Repository
         id: run_pymop
