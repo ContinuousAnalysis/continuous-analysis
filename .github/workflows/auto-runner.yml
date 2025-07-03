@@ -47,14 +47,6 @@ jobs:
           repository: ${{ inputs.project }}
           path: ${{ inputs.project }}
 
-      - name: Debug Testing Repository
-        run: |
-          echo "Current working directory:"
-          pwd
-          echo "Directory contents:"
-          ls -la
-          echo "Auto-pymop directory contents (if exists):"
-
       - name: Run PyMOP on Testing Repository
         id: run_pymop
         shell: bash
@@ -69,7 +61,7 @@ jobs:
             bash -c "set -euxo pipefail && \
             ls -la /local && \
             cp /local/auto-pymop/scripts/run_pymop.sh /workspace/run_pymop.sh && \
-            cp -r /local/$REPO_NAME /workspace && \
+            cp -r /local/${{ inputs.project }} /workspace && \
             source /workspace/pymop-venv/bin/activate && \
             chmod +x /workspace/run_pymop.sh && \
             /workspace/run_pymop.sh $REPO_NAME && \
