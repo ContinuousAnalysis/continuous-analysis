@@ -48,15 +48,19 @@ jobs:
         id: run_pymop
         shell: bash
         run: |
+          # Extract just the repository name (without owner)
+          REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
+          echo "Repository name: $REPO_NAME"
+          
           docker run --rm \
             -v "${{ github.workspace }}:/local" \
             pymop-runner \
             bash -c "set -euxo pipefail && \
             cp /local/auto-pymop/scripts/run_pymop.sh /workspace/run_pymop.sh && \
-            cp -r /local/${{ inputs.project }} /workspace && \
+            cp -r /local/$REPO_NAME /workspace && \
             source /workspace/pymop-venv/bin/activate && \
             chmod +x /workspace/run_pymop.sh && \
-            /workspace/run_pymop.sh ${{ inputs.project }} && \
+            /workspace/run_pymop.sh $REPO_NAME && \
             deactivate"
 
       - name: Parse PyMOP Output for Violations
