@@ -21,40 +21,43 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
       - name: Checkout Auto-PyMOP Repository
         uses: actions/checkout@v4
         with:
           repository: ContinuousAnalysis/auto-pymop
           path: auto-pymop
 
-      - name: Install Python Dependencies
+      - name: Install Required Python Dependencies for Auto-PyMOP
         run: |
           pip install -r auto-pymop/requirements.txt
 
-      - name: Debug Docker Path
+      - name: Debug Docker Path and Version
         run: |
           echo "PATH is: $PATH"
           which docker
           docker --version
 
-      - name: Build Docker Image
+      - name: Build PyMOP Docker Image
         run: |
           sudo docker build -t pymop-runner auto-pymop/docker_files
 
-      - name: Run PyMOP on updated projects
+      - name: Checkout Testing Repository
+        uses: actions/checkout@v4
+
+      - name: Run PyMOP on Testing Repository
         id: run_pymop
         shell: bash
         run: |
-          python3 auto-pymop/scripts/track_changes.py
-          # Check if changed_projects.txt exists
-          if [ -f changed_projects.txt ]; then
-            echo "changes_detected=true" >> $GITHUB_OUTPUT
-          else
-            echo "changes_detected=false" >> $GITHUB_OUTPUT
-          fi
+          docker run --rm \
+            -v "${{ github.workspace }}:/local" \
+            pymop-runner \
+            bash -c "set -euxo pipefail && \
+            cp /local/auto-pymop/scripts/run_pymop.sh /workspace/run_pymop.sh && \
+            cp -r /local/${{ inputs.project }} /workspace && \
+            source /workspace/pymop-venv/bin/activate && \
+            chmod +x /workspace/run_pymop.sh && \
+            /workspace/run_pymop.sh ${{ inputs.project }} && \
+            deactivate"
 
       - name: Parse PyMOP Output for Violations
         if: steps.run_pymop.outputs.changes_detected == 'true'

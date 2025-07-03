@@ -1,23 +1,19 @@
 #!/bin/bash
 
 # PyMOP Runner Script
-# Usage: ./run_pymop.sh <project_name> <git_url>
+# Usage: ./run_pymop.sh <project_name>
 
 PROJECT=$1
-URL=$2
 
-if [ -z "$PROJECT" ] || [ -z "$URL" ]; then
-    echo "Usage: $0 <project_name> <git_url>"
+if [ -z "$PROJECT" ]; then
+    echo "Usage: $0 <project_name>"
     exit 1
 fi
 
+# Print project name
 echo "Running PyMOP for project: $PROJECT"
-echo "Repository URL: $URL"
 
-# Clone the repository
-git clone "$URL" "$PROJECT"
-
-# Change to project directory
+# Go to project directory
 cd "$PROJECT"
 
 # Install github submodules if they exist
@@ -88,11 +84,6 @@ mkdir -p /local/pymop-output
 rm -rf /local/pymop-output/${PROJECT}_pymop_output
 cp -r "${PROJECT}_pymop_output" /local/pymop-output/
 
-# Clean up
-rm -rf "${PROJECT}_pymop_output/"
-cd ..
-rm -rf "${PROJECT}"
-
 # Print success message
 echo "PyMOP completed for $PROJECT"
-echo "Output files saved in /local/pymop-output/${PROJECT}_pymop_output.zip" 
+echo "Output files saved in /local/pymop-output/${PROJECT}_pymop_output/" 
