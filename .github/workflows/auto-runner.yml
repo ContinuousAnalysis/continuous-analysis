@@ -56,6 +56,7 @@ jobs:
             -v "${{ github.workspace }}:/local" \
             pymop-runner \
             bash -c "set -euxo pipefail && \
+            ls -la /local && \
             cp /local/auto-pymop/scripts/run_pymop.sh /workspace/run_pymop.sh && \
             cp -r /local/$REPO_NAME /workspace && \
             source /workspace/pymop-venv/bin/activate && \
