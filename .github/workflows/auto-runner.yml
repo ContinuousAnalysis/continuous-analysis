@@ -21,21 +21,17 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name: Checkout Auto-PyMOP Repository
-        uses: actions/checkout@v4
-        with:
-          repository: ContinuousAnalysis/auto-pymop
-          path: auto-pymop
-
-      - name: Install Required Python Dependencies for Auto-PyMOP
-        run: |
-          pip install -r auto-pymop/requirements.txt
-
       - name: Debug Docker Path and Version
         run: |
           echo "PATH is: $PATH"
           which docker
           docker --version
+
+      - name: Checkout Auto-PyMOP Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ContinuousAnalysis/auto-pymop
+          path: auto-pymop
 
       - name: Build PyMOP Docker Image
         run: |
@@ -67,13 +63,6 @@ jobs:
             /workspace/run_pymop.sh $REPO_NAME && \
             deactivate"
 
-      - name: Debug Testing Repository
-        run: |
-          echo "Current working directory:"
-          pwd
-          echo "Directory contents:"
-          ls -la
-
       - name: Parse PyMOP Output for Violations
         run: |
           # Extract just the repository name (without owner)
@@ -81,19 +70,11 @@ jobs:
           echo "Repository name: $REPO_NAME"
           python3 auto-pymop/scripts/parse_pymop_output.py $REPO_NAME
 
-      - name: Debug Parsed Output
-        run: |
-          echo "Current working directory:"
-          pwd
-          echo "Directory contents:"
-          ls -la
-
       - name: Upload Violation Reports
         uses: actions/upload-artifact@v4
         with:
           name: pymop-violations-${{ github.run_id }}
           path: |
-            auto-pymop/pymop_results_*.csv
-            auto-pymop/pymop_over_time_results.csv
-            auto-pymop/changed_projects.txt
+            pymop_results_*.csv
+            pymop_over_time_results.csv
           retention-days: 30
