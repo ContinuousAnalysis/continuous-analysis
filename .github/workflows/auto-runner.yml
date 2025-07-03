@@ -32,10 +32,17 @@ jobs:
           ls -la
           echo "Auto-pymop directory contents (if exists):"
           ls -la auto-pymop/ 2>/dev/null || echo "auto-pymop directory does not exist"
+          cd ..
+          echo "Current working directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
+          echo "Auto-pymop directory contents (if exists):"
+          ls -la auto-pymop/ 2>/dev/null || echo "auto-pymop directory does not exist"
 
       - name: Install Python Dependencies
         run: |
-          pip install -r requirements.txt
+          pip install -r auto-pymop/requirements.txt
 
       - name: Install Docker
         run: |
@@ -70,8 +77,7 @@ jobs:
       - name: Parse PyMOP Output for Violations
         if: steps.run_pymop.outputs.changes_detected == 'true'
         run: |
-          cd ~/pymop-shadow-observer
-          python3 scripts/parse_pymop_output.py
+          python3 auto-pymop/scripts/parse_pymop_output.py
 
       - name: Upload Violation Reports
         if: steps.run_pymop.outputs.changes_detected == 'true'
@@ -79,20 +85,18 @@ jobs:
         with:
           name: pymop-violations-${{ github.run_id }}
           path: |
-            ~/pymop-shadow-observer/pymop_results_*.csv
-            ~/pymop-shadow-observer/pymop_over_time_results.csv
-            ~/pymop-shadow-observer/changed_projects.txt
+            auto-pymop/pymop_results_*.csv
+            auto-pymop/pymop_over_time_results.csv
+            auto-pymop/changed_projects.txt
           retention-days: 30
 
       - name: Compare PyMOP Output with Previous Run and Report New Violations
         if: steps.run_pymop.outputs.changes_detected == 'true'
         run: |
-          cd ~/pymop-shadow-observer
-          python3 scripts/track_violations.py
+          python3 auto-pymop/scripts/track_violations.py
 
       - name: Clean up unneeded files
         if: steps.run_pymop.outputs.changes_detected == 'true'
         run: |
-          cd ~/pymop-shadow-observer
-          rm -f pymop_results_*.csv
-          rm -f changed_projects.txt
+          rm -f auto-pymop/pymop_results_*.csv
+          rm -f auto-pymop/changed_projects.txt
