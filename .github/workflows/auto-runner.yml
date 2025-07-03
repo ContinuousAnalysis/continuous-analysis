@@ -24,9 +24,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Debug Directory Structure
+        run: |
+          echo "Current working directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
+          echo "Auto-pymop directory contents (if exists):"
+          ls -la auto-pymop/ 2>/dev/null || echo "auto-pymop directory does not exist"
+
       - name: Install Python Dependencies
         run: |
-          pip install -r auto-pymop/requirements.txt
+          pip install -r requirements.txt
 
       - name: Install Docker
         run: |
