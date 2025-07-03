@@ -39,6 +39,13 @@ jobs:
           ls -la
           echo "Auto-pymop directory contents (if exists):"
           ls -la auto-pymop/ 2>/dev/null || echo "auto-pymop directory does not exist"
+          cd ..
+          echo "Current working directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
+          echo "Auto-pymop directory contents (if exists):"
+          ls -la auto-pymop/ 2>/dev/null || echo "auto-pymop directory does not exist"
 
       - name: Install Python Dependencies
         run: |
