@@ -6,6 +6,9 @@ on:
       project:
         required: true
         type: string
+      commit:
+        required: false
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -38,10 +41,19 @@ jobs:
           sudo docker build -t pymop-runner auto-pymop/docker_files
 
       - name: Checkout Testing Repository
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ inputs.project }}
-          path: ${{ inputs.project }}
+        run: |
+          REPO_URL="https://github.com/${{ inputs.project }}.git"
+          REPO_NAME=$(basename "${{ inputs.project }}")
+          
+          git clone "$REPO_URL" "$REPO_NAME"
+          cd "$REPO_NAME"
+
+          if [ -n "${{ inputs.commit }}" ]; then
+            echo "Checking out specific commit: ${{ inputs.commit }}"
+            git checkout ${{ inputs.commit }}
+          else
+            echo "Using default branch"
+          fi
 
       - name: Run PyMOP on Testing Repository
         id: run_pymop
