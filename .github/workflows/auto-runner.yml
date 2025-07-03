@@ -67,13 +67,28 @@ jobs:
             /workspace/run_pymop.sh $REPO_NAME && \
             deactivate"
 
-      - name: Parse PyMOP Output for Violations
-        if: steps.run_pymop.outputs.changes_detected == 'true'
+      - name: Debug Testing Repository
         run: |
-          python3 auto-pymop/scripts/parse_pymop_output.py
+          echo "Current working directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
+
+      - name: Parse PyMOP Output for Violations
+        run: |
+          # Extract just the repository name (without owner)
+          REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
+          echo "Repository name: $REPO_NAME"
+          python3 auto-pymop/scripts/parse_pymop_output.py $REPO_NAME
+
+      - name: Debug Parsed Output
+        run: |
+          echo "Current working directory:"
+          pwd
+          echo "Directory contents:"
+          ls -la
 
       - name: Upload Violation Reports
-        if: steps.run_pymop.outputs.changes_detected == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: pymop-violations-${{ github.run_id }}
@@ -82,14 +97,3 @@ jobs:
             auto-pymop/pymop_over_time_results.csv
             auto-pymop/changed_projects.txt
           retention-days: 30
-
-      - name: Compare PyMOP Output with Previous Run and Report New Violations
-        if: steps.run_pymop.outputs.changes_detected == 'true'
-        run: |
-          python3 auto-pymop/scripts/track_violations.py
-
-      - name: Clean up unneeded files
-        if: steps.run_pymop.outputs.changes_detected == 'true'
-        run: |
-          rm -f auto-pymop/pymop_results_*.csv
-          rm -f auto-pymop/changed_projects.txt

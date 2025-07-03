@@ -5,6 +5,8 @@ from collections import OrderedDict
 from collections import Counter
 import csv
 from datetime import datetime
+import sys
+
 
 def get_time_from_json(algorithm):
     """Extract time information from JSON file"""
@@ -267,7 +269,7 @@ def append_to_results_over_time(lines, timestamp):
             except Exception as e:
                 print('could not write line:', line_copy.keys(), str(e))
 
-def main():
+def main(project: str):
     """Main function to process projects and generate results"""
     # Get the timestamp for the current run
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
@@ -275,126 +277,121 @@ def main():
     # Initialize the lines list
     lines = []
 
-    # Get the changed projects from the changed_projects.txt file
-    with open('changed_projects.txt', 'r') as f:
-        changed_projects = f.read().splitlines()
+    # Parse the output for the project
+    pymop_folder = f"./pymop-output/{project}_pymop_output"
 
-    # Parse the output for each project
-    for project in sorted(changed_projects):
-        pymop_folder = f"./pymop-output/{project}_pymop_output"
+    # If no pymop folder, print error and skip to next project
+    if not os.path.exists(pymop_folder):
+        print(f'No pymop folder found for {project}')
+        line = OrderedDict({
+            'project': project,
+            'algorithm': 'D',
+            'passed': 'x',
+            'failed': 'x',
+            'skipped': 'x',
+            'xfailed': 'x',
+            'xpassed': 'x',
+            'errors': 'x',
+            'time': 'x',
+            'type_project': 'pymop',
+            'time_instrumentation': 'x',
+            'test_duration': 'x',
+            'time_create_monitor': 'x',
+            'total_violations': 'x',
+            'violations': 'x',
+            'unique_violations_count': 'x',
+            'monitors': 'x',
+            'total_monitors': 'x',
+            'events': 'x',
+            'total_events': 'x',
+            'end_to_end_time': 'x',
+            'post_run_time': 'x',
+        })
+        lines.append(line)
+    else:
+        os.chdir(pymop_folder)
 
-        # If no pymop folder, print error and skip to next project
-        if not os.path.exists(pymop_folder):
-            print(f'No pymop folder found for {project}')
-            line = OrderedDict({
-                'project': project,
-                'algorithm': 'D',
-                'passed': 'x',
-                'failed': 'x',
-                'skipped': 'x',
-                'xfailed': 'x',
-                'xpassed': 'x',
-                'errors': 'x',
-                'time': 'x',
-                'type_project': 'pymop',
-                'time_instrumentation': 'x',
-                'test_duration': 'x',
-                'time_create_monitor': 'x',
-                'total_violations': 'x',
-                'violations': 'x',
-                'unique_violations_count': 'x',
-                'monitors': 'x',
-                'total_monitors': 'x',
-                'events': 'x',
-                'total_events': 'x',
-                'end_to_end_time': 'x',
-                'post_run_time': 'x',
-            })
+        # Process Algorithm D results
+        for algorithm in ["D"]:
+            files = os.listdir()
+            result_files = [f for f in files if f.endswith(f'results.txt')]
+            output_files = [f for f in files if f.endswith('_Output.txt')]
+
+            # If no result or output files, print error and skip to next project
+            if not result_files or not output_files:
+                print(f'No pymop files found for {project}')
+                result_file = None
+                output_file = None
+            else:
+                result_file = result_files[0]
+                output_file = output_files[0]
+
+            # Get the test duration, end-to-end time, and test summary
+            test_duration, end_to_end_time, test_summary, post_run_time = get_test_info_from_files(result_file, output_file)
+
+            # Get the time from the test summary
+            time = process_test_summary(test_summary)
+
+            # Create the base data structure
+            line = create_base_data_structure(project)
+            line['time'] = time
+            process_test_results(test_summary, time, line)
+
+            # Set the type of project
+            line['type_project'] = 'pymop'
+
+            # Get the instrumentation time, create monitor time, and test duration
+            try:
+                ret_time = get_time_from_json(algorithm)
+            except Exception as e:
+                ret_time = None
+
+            # If ret_time is not None, set the instrumentation time, create monitor time, and test duration
+            if ret_time is not None and time is not None and isinstance(end_to_end_time, float) and isinstance(test_duration, float):
+                (instrumentation_duration, create_monitor_duration, _) = ret_time
+                line['time_instrumentation'] = instrumentation_duration
+                line['time_create_monitor'] = create_monitor_duration
+                line['test_duration'] = end_to_end_time - instrumentation_duration - create_monitor_duration
+                line['end_to_end_time'] = end_to_end_time
+            else:
+                line['time_instrumentation'] = 'x'
+                line['time_create_monitor'] = 'x'
+                line['test_duration'] = 'x'
+                line['end_to_end_time'] = 'x'
+
+            if algorithm != "ORIGINAL":
+                ret_violation = get_num_violations_from_json(algorithm)
+
+                if ret_violation is not None:
+                    (
+                        violations_str,
+                        total_violations,
+                        unique_violations_count,
+                        violations_by_location
+                    ) = ret_violation
+                
+                    line['total_violations'] = total_violations
+                    line['violations'] = violations_str
+                    line['unique_violations_count'] = unique_violations_count
+                    line['violations_by_location'] = violations_by_location
+
+                ret_full = get_monitors_and_events_from_json(algorithm)
+
+                if ret_full is not None:
+                    monitors_str, events_str, total_monitors, total_events = ret_full
+
+                    line['monitors'] = monitors_str
+                    line['total_monitors'] = total_monitors
+                    line['events'] = events_str
+                    line['total_events'] = total_events
+
+                # Add the post-run time
+                line['post_run_time'] = 0.0
+
             lines.append(line)
-        else:
-            os.chdir(pymop_folder)
 
-            # Process Algorithm D results
-            for algorithm in ["D"]:
-                files = os.listdir()
-                result_files = [f for f in files if f.endswith(f'results.txt')]
-                output_files = [f for f in files if f.endswith('_Output.txt')]
-
-                # If no result or output files, print error and skip to next project
-                if not result_files or not output_files:
-                    print(f'No pymop files found for {project}')
-                    result_file = None
-                    output_file = None
-                else:
-                    result_file = result_files[0]
-                    output_file = output_files[0]
-
-                # Get the test duration, end-to-end time, and test summary
-                test_duration, end_to_end_time, test_summary, post_run_time = get_test_info_from_files(result_file, output_file)
-
-                # Get the time from the test summary
-                time = process_test_summary(test_summary)
-
-                # Create the base data structure
-                line = create_base_data_structure(project)
-                line['time'] = time
-                process_test_results(test_summary, time, line)
-
-                # Set the type of project
-                line['type_project'] = 'pymop'
-
-                # Get the instrumentation time, create monitor time, and test duration
-                try:
-                    ret_time = get_time_from_json(algorithm)
-                except Exception as e:
-                    ret_time = None
-
-                # If ret_time is not None, set the instrumentation time, create monitor time, and test duration
-                if ret_time is not None and time is not None and isinstance(end_to_end_time, float) and isinstance(test_duration, float):
-                    (instrumentation_duration, create_monitor_duration, _) = ret_time
-                    line['time_instrumentation'] = instrumentation_duration
-                    line['time_create_monitor'] = create_monitor_duration
-                    line['test_duration'] = end_to_end_time - instrumentation_duration - create_monitor_duration
-                    line['end_to_end_time'] = end_to_end_time
-                else:
-                    line['time_instrumentation'] = 'x'
-                    line['time_create_monitor'] = 'x'
-                    line['test_duration'] = 'x'
-                    line['end_to_end_time'] = 'x'
-
-                if algorithm != "ORIGINAL":
-                    ret_violation = get_num_violations_from_json(algorithm)
-
-                    if ret_violation is not None:
-                        (
-                            violations_str,
-                            total_violations,
-                            unique_violations_count,
-                            violations_by_location
-                        ) = ret_violation
-                    
-                        line['total_violations'] = total_violations
-                        line['violations'] = violations_str
-                        line['unique_violations_count'] = unique_violations_count
-                        line['violations_by_location'] = violations_by_location
-
-                    ret_full = get_monitors_and_events_from_json(algorithm)
-
-                    if ret_full is not None:
-                        monitors_str, events_str, total_monitors, total_events = ret_full
-
-                        line['monitors'] = monitors_str
-                        line['total_monitors'] = total_monitors
-                        line['events'] = events_str
-                        line['total_events'] = total_events
-
-                    # Add the post-run time
-                    line['post_run_time'] = 0.0
-
-                lines.append(line)
-
-            # Change back to parent directory
-            os.chdir('../..')
+        # Change back to parent directory
+        os.chdir('../..')
 
     # Add the results to the pymop_results_${timestamp}.csv file
     print("\n====== RESULTS CSV ======\n")
@@ -409,4 +406,5 @@ def main():
     print('appended to pymop_over_time_results.csv')
 
 if __name__ == "__main__":
-    main()
+    project = sys.argv[1]
+    main(project)
