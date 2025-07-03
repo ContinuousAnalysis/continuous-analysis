@@ -69,7 +69,7 @@ jobs:
             bash -c "set -euxo pipefail && \
             ls -la /local && \
             cp /local/auto-pymop/scripts/run_pymop.sh /workspace/run_pymop.sh && \
-            cp -r /local/${{ inputs.project }} /workspace && \
+            cp -r /local/$REPO_NAME /workspace && \
             source /workspace/pymop-venv/bin/activate && \
             chmod +x /workspace/run_pymop.sh && \
             /workspace/run_pymop.sh $REPO_NAME && \
