@@ -26,7 +26,19 @@ jobs:
 
       - name: Install Python Dependencies
         run: |
-          pip install -r requirements.txt
+          pip install -r auto-pymop/requirements.txt
+
+      - name: Install Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          sudo systemctl start docker
+          sudo systemctl enable docker
+          sudo usermod -aG docker $USER
+
+      - name: Build Docker Image
+        run: |
+          sudo docker build -t pymop-runner auto-pymop/docker_files
 
       - name: Debug Docker Path
         run: |
@@ -38,8 +50,7 @@ jobs:
         id: run_pymop
         shell: bash
         run: |
-          cd ~/pymop-shadow-observer
-          python3 scripts/track_changes.py
+          python3 auto-pymop/scripts/track_changes.py
           # Check if changed_projects.txt exists
           if [ -f changed_projects.txt ]; then
             echo "changes_detected=true" >> $GITHUB_OUTPUT
