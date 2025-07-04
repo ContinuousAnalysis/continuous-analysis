@@ -1,4 +1,4 @@
-name: PyMOP Auto Runner
+name: Auto Analysis Runner
 
 on:
   workflow_call:
@@ -30,17 +30,7 @@ jobs:
           which docker
           docker --version
 
-      - name: Checkout Auto-PyMOP Repository
-        uses: actions/checkout@v4
-        with:
-          repository: ContinuousAnalysis/auto-pymop
-          path: auto-pymop
-
-      - name: Build PyMOP Docker Image
-        run: |
-          sudo docker build -t pymop-runner auto-pymop/docker_files
-
-      - name: Checkout Testing Repository
+      - name: Checkout Testing Repository and create three copies for each analysis
         run: |
           REPO_URL="https://github.com/${{ inputs.project }}.git"
           REPO_NAME=$(basename "${{ inputs.project }}")
@@ -54,6 +44,32 @@ jobs:
           else
             echo "Using default branch"
           fi
+
+          cd ..
+
+          cp -r "$REPO_NAME" "$REPO_NAME-original"
+          cp -r "$REPO_NAME" "$REPO_NAME-pymop"
+          cp -r "$REPO_NAME" "$REPO_NAME-dylin"
+
+      - name: Checkout Auto-PyMOP Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ContinuousAnalysis/auto-pymop
+          path: auto-pymop
+
+      - name: Run Original Test
+        run: |
+          python3 -m venv original-test-venv
+          source original-test-venv/bin/activate
+          chmod +x /workspace/auto-pymop/scripts/run_original.sh
+          ./auto-pymop/scripts/run_original.sh $REPO_NAME
+          deactivate
+          rm -rf original-test-venv
+          rm -rf $REPO_NAME-original
+
+      - name: Build PyMOP Docker Image
+        run: |
+          sudo docker build -t pymop-runner auto-pymop/docker_files
 
       - name: Run PyMOP on Testing Repository
         id: run_pymop
@@ -69,7 +85,7 @@ jobs:
             bash -c "set -euxo pipefail && \
             ls -la /local && \
             cp /local/auto-pymop/scripts/run_pymop.sh /workspace/run_pymop.sh && \
-            cp -r /local/$REPO_NAME /workspace && \
+            cp -r /local/$REPO_NAME-pymop /workspace && \
             source /workspace/pymop-venv/bin/activate && \
             chmod +x /workspace/run_pymop.sh && \
             /workspace/run_pymop.sh $REPO_NAME && \
@@ -89,4 +105,5 @@ jobs:
           path: |
             pymop_results_*.csv
             pymop_over_time_results.csv
+            pymop-output/
           retention-days: 30
