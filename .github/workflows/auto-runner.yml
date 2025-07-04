@@ -59,6 +59,10 @@ jobs:
 
       - name: Run Original Test
         run: |
+          # Extract just the repository name (without owner)
+          REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
+          echo "Repository name: $REPO_NAME"
+          
           python3 -m venv original-test-venv
           source original-test-venv/bin/activate
           chmod +x auto-pymop/scripts/run_original.sh
