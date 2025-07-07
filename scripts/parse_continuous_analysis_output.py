@@ -8,9 +8,9 @@ from datetime import datetime
 import sys
 
 
-def get_time_from_json(algorithm):
+def get_time_from_json():
     """Extract time information from JSON file"""
-    filename = f'{algorithm}-time.json'
+    filename = f'D-time.json'
     if not os.path.isfile(filename):
         return None
     
@@ -64,9 +64,9 @@ def get_monitors_and_events_from_json(algorithm):
 
     return return_str_monitors[:-2], return_str_events[:-2], total_monitors, total_events
 
-def get_num_violations_from_json(algorithm):
+def get_num_violations_from_json():
     """Extract violation information from JSON file"""
-    filename = f'{algorithm}-violations.json'
+    filename = f'D-violations.json'
     if not os.path.isfile(filename):
         return None
     
@@ -116,7 +116,7 @@ def results_csv_file(lines, timestamp):
 
     max_columns_line = max(lines, key=lambda line: len(line.keys()))
 
-    with open(f'pymop_results_{timestamp}.csv', 'w', newline='', encoding='utf-8') as f:
+    with open(f'continuous-analysis-results_{timestamp}.csv', 'w', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=max_columns_line.keys())
         writer.writeheader()
         for line in lines:
@@ -146,11 +146,11 @@ def process_test_summary(test_summary):
                 time = part[:-1]
     return time
 
-def create_base_data_structure(project):
+def create_base_data_structure(project, algorithm):
     """Create base OrderedDict for test results"""
     return OrderedDict({
         'project': project,
-        'algorithm': 'D',
+        'algorithm': algorithm,
         'passed': 0,
         'failed': 0,
         'skipped': 0,
@@ -158,7 +158,7 @@ def create_base_data_structure(project):
         'xpassed': 0,
         'errors': 0,
         'time': None,
-        'type_project': 'pymop',
+        'type_project': algorithm,
         'time_instrumentation': 'x',
         'time_create_monitor': 'x',
         'test_duration': 'x',
@@ -278,14 +278,94 @@ def main(project: str):
     lines = []
 
     # Parse the output for the project
-    pymop_folder = f"./pymop-output/{project}_pymop_output"
+    original_folder = f"./continuous-analysis-output/{project}_original_output"
+    pymop_folder = f"./continuous-analysis-output/{project}_pymop_output"
+    dylin_folder = f"./continuous-analysis-output/{project}_dylin_output"
+
+    # ===============================================
+    # Process Original files
+    # ===============================================
+
+    # Change to the original folder
+    os.chdir(original_folder)
+
+    # Get all files in the original folder
+    files = os.listdir()
+
+    # Get the result and output files
+    result_files = [f for f in files if f.endswith(f'results.txt')]
+    output_files = [f for f in files if f.endswith('Output.txt')]
+
+    # If no result or output files, print error and skip to next project
+    if not result_files or not output_files:
+        print(f'No original files found for {project}')
+        result_file = None
+        output_file = None
+    else:
+        # Get the first result and output files
+        result_file = result_files[0]
+        output_file = output_files[0]
+
+    # Get the test duration, end-to-end time, and test summary
+    algorithm = 'original'
+    test_duration, end_to_end_time, test_summary, post_run_time = get_test_info_from_files(result_file, output_file)
+
+    # If no result file, print error and skip to next project
+    if result_file is None:
+        print(f"No test results found for {project} with algorithm {algorithm}")
+        os.chdir('../..')
+        return
+
+    # Get the time from the test summary
+    time = process_test_summary(test_summary)
+
+    # If no test summary, print error and skip to next project
+    if not test_summary:
+        print(f"No test summary found for {project} with algorithm {algorithm}")
+        os.chdir('../..')
+        return
+
+    # Create the base data structure
+    line = create_base_data_structure(project, algorithm)
+
+    # Process the test results
+    line['time'] = time
+    process_test_results(test_summary, time, line)
+
+    # Add the type of project
+    line['type_project'] = 'original'
+
+    # Add the instrumentation time
+    line['time_instrumentation'] = 0.0
+
+    # Add the test duration
+    line['test_duration'] = test_duration
+
+    # Add the time to create the monitor
+    line['time_create_monitor'] = 0.0
+
+    # Add end-to-end time
+    line['end_to_end_time'] = end_to_end_time
+
+    # Add the post-run time
+    line['post_run_time'] = 0.0
+
+    # Add the line to the lines list
+    lines.append(line)
+
+    # Change to the original folder
+    os.chdir('../..')
+
+    # ===============================================
+    # Process Pymop files with libraries
+    # ===============================================
 
     # If no pymop folder, print error and skip to next project
     if not os.path.exists(pymop_folder):
         print(f'No pymop folder found for {project}')
         line = OrderedDict({
             'project': project,
-            'algorithm': 'D',
+            'algorithm': 'pymop',
             'passed': 'x',
             'failed': 'x',
             'skipped': 'x',
@@ -333,7 +413,7 @@ def main(project: str):
             time = process_test_summary(test_summary)
 
             # Create the base data structure
-            line = create_base_data_structure(project)
+            line = create_base_data_structure(project, algorithm)
             line['time'] = time
             process_test_results(test_summary, time, line)
 
@@ -342,7 +422,7 @@ def main(project: str):
 
             # Get the instrumentation time, create monitor time, and test duration
             try:
-                ret_time = get_time_from_json(algorithm)
+                ret_time = get_time_from_json()
             except Exception as e:
                 ret_time = None
 
@@ -359,8 +439,8 @@ def main(project: str):
                 line['test_duration'] = 'x'
                 line['end_to_end_time'] = 'x'
 
-            if algorithm != "ORIGINAL":
-                ret_violation = get_num_violations_from_json(algorithm)
+            if algorithm != "original":
+                ret_violation = get_num_violations_from_json()
 
                 if ret_violation is not None:
                     (
@@ -391,6 +471,175 @@ def main(project: str):
             lines.append(line)
 
         # Change back to parent directory
+        os.chdir('../..')
+
+    # ===============================================
+    # Process Dylin files without libraries
+    # ===============================================
+
+    # If no dylin folder, print error and skip to next project
+    if not os.path.exists(dylin_folder):
+        print(f'No dylin folder found for {project}')
+        line = OrderedDict({
+            'project': project,
+            'algorithm': 'dylin',
+            'passed': 'x',
+            'failed': 'x',
+            'skipped': 'x',
+            'xfailed': 'x',
+            'xpassed': 'x',
+            'errors': 'x',
+            'time': 'x',
+            'type_project': 'dylin',
+            'time_instrumentation': 'x',
+            'test_duration': 'x',
+            'time_create_monitor': 'x',
+            'end_to_end_time': 'x',
+            'total_violations': 'x',
+            'violations': 'x',
+            'unique_violations_count': 'x',
+            'violations_by_location': 'x',
+            'post_run_time': 'x',
+        })
+        lines.append(line)
+    else:
+        # Change to the dylin folder
+        os.chdir(dylin_folder)
+
+        # Get all files in the dylin folder
+        files = os.listdir()
+
+        # Get the result and output files
+        result_files = [f for f in files if f.endswith(f'results.txt')]
+        output_files = [f for f in files if f.endswith('_Output.txt')]
+        findings_csv = [f for f in files if f.endswith('_findings.csv')]
+        findings_txt = [f for f in files if f.endswith('_findings.txt')]
+
+        # If no result or output files, print error and skip to next project
+        if not result_files or not output_files:
+            print(f'No dylin files found for {project}')
+            result_file = None
+            output_file = None
+        else:
+            # Get the first result and output files (should only be one)
+            result_file = result_files[0]
+            output_file = output_files[0]
+
+        # Get the instrumentation duration and test duration
+        algorithm = 'dylin'
+        instrumentation_duration = "x"
+        test_duration = "x"
+        if result_file is not None:
+            with open(result_file, 'r') as file:
+                for l in file:
+                    if 'Instrumentation Time:' in l:
+                        instrumentation_duration = float(l.split(' ')[-1].replace('s', '').strip())
+                    elif 'Test Time:' in l:
+                        test_time = l.split(' ')[-1].replace('s', '').strip()
+                        if test_time != "Timeout":
+                            test_duration = float(test_time)
+                    elif 'Post-Run Time:' in l:
+                        post_run_time = l.split(' ')[-1].replace('s', '').strip()
+                        if post_run_time != "Timeout":
+                            post_run_time = float(post_run_time)
+        
+        # Get the total violations, violations, total events, and events
+        total_violations = 0
+        violations_map = []
+        unique_violations_count = {}
+        violations_by_location = {}  # New dict to track violations by location
+
+        # If there are statistics files, parse them
+        if findings_csv and findings_txt:
+
+            # Parse the findings csv
+            with open(findings_csv[0], 'r') as file:
+                reader = csv.reader(file)
+                for row in reader:
+                    if int(row[1]) > 0:
+                        spec_name = row[0]
+                        violations_map.append(f"{spec_name}={row[1]}")
+                        total_violations += int(row[1])
+
+            # Parse the findings txt
+            with open(findings_txt[0], 'r') as file:
+                for l in file:
+                    if l.strip() != "":
+                        l_split = l.split(': ')
+                        if len(l_split) < 3 or '-' not in l_split[0]:
+                            continue
+                        violation_number = l_split[0].strip()
+                        violation_file = l_split[1].strip()
+                        violation_line = l_split[2].strip()
+                        violation_location = f"{violation_file}:{violation_line}"
+                        if violation_location not in violations_by_location:
+                            violations_by_location[violation_location] = 1
+                            unique_violations_count[violation_number] = unique_violations_count.get(violation_number, 0) + 1
+                        else:
+                            violations_by_location[violation_location] += 1
+
+        # Convert lists to strings
+        violations_map = ';'.join(violations_map) if violations_map else ""  # Changed to PyMOP format: "spec1=count1;spec2=count2"
+        events_map = '<>'.join(events_map) if events_map else ""
+        unique_violations_count_list = []
+        for key, value in unique_violations_count.items():
+            unique_violations_count_list.append(f"{key}={value}")
+        unique_violations_count = ';'.join(unique_violations_count_list) if unique_violations_count_list else ""
+        total_violations = str(total_violations)
+        total_events = str(total_events)
+
+        # Get the test summary from the output file
+        test_summary = None
+        if output_file:
+            with open(output_file, 'r') as file:
+                for line in reversed(file.readlines()):
+                    if "passed" in line.lower() and "in" in line:
+                        test_summary = line.strip()
+                        break
+
+        # Get the time from the test summary
+        time = process_test_summary(test_summary)
+
+        # Create the base data structure
+        line = create_base_data_structure(project, algorithm)
+        line['time'] = time
+        process_test_results(test_summary, time, line)
+
+        # Add the type of project
+        line['type_project'] = 'dylin'
+
+        # Add the instrumentation time
+        line['time_instrumentation'] = instrumentation_duration
+
+        # If no time, set the test duration to x
+        if time is None:
+            line['test_duration'] = 'x'
+            line['end_to_end_time'] = 'x'
+            line['total_violations'] = 'x'
+            line['violations'] = 'x'
+            line['unique_violations_count'] = 'x'
+            line['violations_by_location'] = 'x'
+        else:
+            line['test_duration'] = test_duration
+            if test_duration != "x":
+                line['end_to_end_time'] = float(instrumentation_duration) + float(test_duration) + float(post_run_time)
+            else:
+                line['end_to_end_time'] = 'x'
+            
+            # Add the total violations, violations, total events, and events
+            line['total_violations'] = total_violations
+            line['violations'] = violations_map
+            line['unique_violations_count'] = unique_violations_count
+            line['violations_by_location'] = violations_by_location
+
+        # Add the time to create the monitor
+        line['time_create_monitor'] = 0.0  # DynaPyt doesn't track this
+
+        # Add the post-run time
+        line['post_run_time'] = post_run_time
+
+        # Add the line to the lines list
+        lines.append(line)
         os.chdir('../..')
 
     # Add the results to the pymop_results_${timestamp}.csv file
