@@ -127,9 +127,14 @@ def results_csv_file(lines, timestamp):
                 # Clean up file paths based on the tool type
                 cleaned_violations = {}
                 for loc, count in line['violations_by_location'].items():
-                    spec, filepath, line_num = loc.rsplit(':', 2)
-                    clean_loc = f"{spec}:{filepath}:{line_num}"
-                    cleaned_violations[clean_loc] = count
+                    try:
+                        spec, filepath, line_num = loc.rsplit(':', 2)
+                        clean_loc = f"{spec}:{filepath}:{line_num}"
+                        cleaned_violations[clean_loc] = count
+                    except ValueError:
+                        filepath, line_num = loc.rsplit(':', 1)
+                        clean_loc = f"{filepath}:{line_num}"
+                        cleaned_violations[clean_loc] = count
                 line['violations_by_location'] = ';'.join(f"{loc}={count}" for loc, count in cleaned_violations.items())
             try:
                 writer.writerow(line)
