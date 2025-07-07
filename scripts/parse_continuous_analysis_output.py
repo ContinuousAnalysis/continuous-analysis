@@ -580,13 +580,11 @@ def main(project: str):
 
         # Convert lists to strings
         violations_map = ';'.join(violations_map) if violations_map else ""  # Changed to PyMOP format: "spec1=count1;spec2=count2"
-        events_map = '<>'.join(events_map) if events_map else ""
         unique_violations_count_list = []
         for key, value in unique_violations_count.items():
             unique_violations_count_list.append(f"{key}={value}")
         unique_violations_count = ';'.join(unique_violations_count_list) if unique_violations_count_list else ""
         total_violations = str(total_violations)
-        total_events = str(total_events)
 
         # Get the test summary from the output file
         test_summary = None
@@ -649,10 +647,10 @@ def main(project: str):
     print(f'created pymop_results_{timestamp}.csv')
 
     # Append the results to the pymop_over_time_results.csv file
-    print("\n====== APPENDING TO RESULTS OVER TIME ======\n")
-    print(f'appending to pymop_over_time_results.csv')
-    append_to_results_over_time(lines, timestamp)
-    print('appended to pymop_over_time_results.csv')
+    # print("\n====== APPENDING TO RESULTS OVER TIME ======\n")
+    # print(f'appending to pymop_over_time_results.csv')
+    # append_to_results_over_time(lines, timestamp)
+    # print('appended to pymop_over_time_results.csv')
 
 if __name__ == "__main__":
     project = sys.argv[1]
