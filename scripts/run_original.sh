@@ -29,8 +29,11 @@ for file in requirements*.txt; do
 done
 
 # Install additional required dependencies
-if [ -f /local/projects_requirements/${PROJECT}_requirements.txt ]; then
-    pip install -r /local/projects_requirements/${PROJECT}_requirements.txt
+if [ -f ./../continuous-analysis/projects_requirements/${PROJECT}_requirements.txt ]; then
+    echo "Installing additional required dependencies from $PWD/../continuous-analysis/projects_requirements/${PROJECT}_requirements.txt"
+    pip install -r ./../continuous-analysis/projects_requirements/${PROJECT}_requirements.txt
+else
+    echo "No additional required dependencies found in $PWD/../continuous-analysis/projects_requirements/${PROJECT}_requirements.txt"
 fi
 
 # Install the project with all optional dependencies
@@ -67,13 +70,13 @@ RESULTS_FILE="${PROJECT}_original_output/${PROJECT}_results.txt"
 echo "Test Time: ${TEST_TIME}s" >> $RESULTS_FILE
 
 # Copy all output files
-cp "${PROJECT}/${PROJECT}_Output.txt" "${PROJECT}_original_output/"
+cp "${PROJECT}-original/${PROJECT}_Output.txt" "${PROJECT}_original_output/"
 
 # Copy the folder to local directory (remove the old one first if it exists)
-mkdir -p /pymop-output
-cp -r "${PROJECT}_original_output" /pymop-output/
+mkdir -p ./continuous-analysis-output
+cp -r "${PROJECT}_original_output" ./continuous-analysis-output/
 rm -rf "${PROJECT}_original_output"
 
 # Print success message
 echo "Original Test completed for $PROJECT"
-echo "Output files saved in /pymop-output/${PROJECT}_original_output/" 
+echo "Output files saved in /continuous-analysis-output/${PROJECT}_original_output/" 

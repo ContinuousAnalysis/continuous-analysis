@@ -30,7 +30,10 @@ done
 
 # Install additional required dependencies
 if [ -f /local/projects_requirements/${PROJECT}_requirements.txt ]; then
+    echo "Installing additional required dependencies from local/projects_requirements/${PROJECT}_requirements.txt"
     pip install -r /local/projects_requirements/${PROJECT}_requirements.txt
+else
+    echo "No additional required dependencies found in local/projects_requirements/${PROJECT}_requirements.txt"
 fi
 
 # Install the project with all optional dependencies
@@ -73,17 +76,17 @@ RESULTS_FILE="${PROJECT}_pymop_output/${PROJECT}_results.txt"
 echo "Test Time: ${TEST_TIME}s" >> $RESULTS_FILE
 
 # Copy all output files
-cp "${PROJECT}/${PROJECT}_Output.txt" "${PROJECT}_pymop_output/"
-cp "${PROJECT}/.report.json" "${PROJECT}_pymop_output/.report.json"
-cp "${PROJECT}/D-full.json" "${PROJECT}_pymop_output/D-full.json"
-cp "${PROJECT}/D-time.json" "${PROJECT}_pymop_output/D-time.json"
-cp "${PROJECT}/D-violations.json" "${PROJECT}_pymop_output/D-violations.json"
+cp "${PROJECT}-pymop/${PROJECT}_Output.txt" "${PROJECT}_pymop_output/"
+cp "${PROJECT}-pymop/.report.json" "${PROJECT}_pymop_output/.report.json"
+cp "${PROJECT}-pymop/D-full.json" "${PROJECT}_pymop_output/D-full.json"
+cp "${PROJECT}-pymop/D-time.json" "${PROJECT}_pymop_output/D-time.json"
+cp "${PROJECT}-pymop/D-violations.json" "${PROJECT}_pymop_output/D-violations.json"
 
 # Copy the folder to local directory (remove the old one first if it exists)
-mkdir -p /local/pymop-output
-rm -rf /local/pymop-output/${PROJECT}_pymop_output
-cp -r "${PROJECT}_pymop_output" /local/pymop-output/
+mkdir -p /local/continuous-analysis-output
+cp -r "${PROJECT}_pymop_output" /local/continuous-analysis-output/
+rm -rf "${PROJECT}_pymop_output"
 
 # Print success message
 echo "PyMOP completed for $PROJECT"
-echo "Output files saved in /local/pymop-output/${PROJECT}_pymop_output/" 
+echo "Output files saved in /local/continuous-analysis-output/${PROJECT}_pymop_output/" 

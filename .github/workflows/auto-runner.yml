@@ -103,14 +103,14 @@ jobs:
           # Extract just the repository name (without owner)
           REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
           echo "Repository name: $REPO_NAME"
-          python3 auto-pymop/scripts/parse_pymop_output.py $REPO_NAME
+          python3 continuous-analysis/scripts/parse_pymop_output.py $REPO_NAME
 
       - name: Upload Violation Reports
         uses: actions/upload-artifact@v4
         with:
-          name: pymop-violations-${{ github.run_id }}
+          name: continuous-analysis-violations-${{ github.run_id }}
           path: |
-            pymop_results_*.csv
-            pymop_over_time_results.csv
-            pymop-output/
+            continuous-analysis-results_*.csv
+            continuous-analysis-over-time-results.csv
+            continuous-analysis-output/
           retention-days: 30
