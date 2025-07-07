@@ -46,8 +46,6 @@ TEST_START_TIME=$(python3 -c 'import time; print(time.time())')
 timeout -k 9 3600 pytest -W ignore::DeprecationWarning --path=$PWD/../pymop-artifacts-rv/pymop/specs-new \
        --algo=D \
        --continue-on-collection-errors \
-       --json-report \
-       --json-report-indent=2 \
        --statistics \
        --statistics_file=D.json > "${PROJECT}_Output.txt"
 exit_code=$?
@@ -89,4 +87,4 @@ rm -rf "${PROJECT}_pymop_output"
 
 # Print success message
 echo "PyMOP completed for $PROJECT"
-echo "Output files saved in /local/continuous-analysis-output/${PROJECT}_pymop_output/" 
+echo "Output files saved in /local/continuous-analysis-output/${PROJECT}_pymop_output/"

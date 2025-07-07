@@ -98,6 +98,20 @@ jobs:
             /workspace/run_pymop.sh $REPO_NAME && \
             deactivate"
 
+      - name: Run DyLin on Testing Repository
+        run: |
+          # Extract just the repository name (without owner)
+          REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
+
+          # Create a virtual environment and run the original test
+          python3 -m venv dylin-venv
+          source dylin-venv/bin/activate
+          chmod +x continuous-analysis/scripts/run_dylin.sh
+          continuous-analysis/scripts/run_dylin.sh $REPO_NAME
+          deactivate
+          rm -rf dylin-venv
+          rm -rf $REPO_NAME-dylin
+
       - name: Parse PyMOP Output for Violations
         run: |
           # Extract just the repository name (without owner)
