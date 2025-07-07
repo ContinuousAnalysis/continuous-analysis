@@ -75,7 +75,6 @@ echo "Test Time: ${TEST_TIME}s" >> $RESULTS_FILE
 
 # Copy all output files
 cp "${PROJECT}-pymop/${PROJECT}_Output.txt" "${PROJECT}_pymop_output/"
-cp "${PROJECT}-pymop/.report.json" "${PROJECT}_pymop_output/.report.json"
 cp "${PROJECT}-pymop/D-full.json" "${PROJECT}_pymop_output/D-full.json"
 cp "${PROJECT}-pymop/D-time.json" "${PROJECT}_pymop_output/D-time.json"
 cp "${PROJECT}-pymop/D-violations.json" "${PROJECT}_pymop_output/D-violations.json"

@@ -112,17 +112,18 @@ jobs:
           rm -rf dylin-venv
           rm -rf $REPO_NAME-dylin
 
-      - name: Parse PyMOP Output for Violations
+      - name: Parse Continuous-Analysis Output for Violations
         run: |
           # Extract just the repository name (without owner)
           REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
-          echo "Repository name: $REPO_NAME"
-          python3 continuous-analysis/scripts/parse_pymop_output.py $REPO_NAME
+          
+          # Parse the continuous-analysis-output folder
+          python3 continuous-analysis/scripts/parse_continuous_analysis_output.py $REPO_NAME
 
       - name: Upload Violation Reports
         uses: actions/upload-artifact@v4
         with:
-          name: continuous-analysis-violations-${{ github.run_id }}
+          name: continuous-analysis-results-${{ inputs.project }}-${{ github.run_id }}
           path: |
             continuous-analysis-results_*.csv
             continuous-analysis-over-time-results.csv
