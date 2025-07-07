@@ -1,4 +1,4 @@
-name: Auto Analysis Runner
+name: Auto Continuous Analysis Runners
 
 on:
   workflow_call:
@@ -19,7 +19,7 @@ permissions:
   issues: write
 
 jobs:
-  monitor:
+  auto-runner:
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -48,32 +48,35 @@ jobs:
           cd ..
 
           cp -r "$REPO_NAME" "$REPO_NAME-original"
+          echo "Created $REPO_NAME-original"
           cp -r "$REPO_NAME" "$REPO_NAME-pymop"
+          echo "Created $REPO_NAME-pymop"
           cp -r "$REPO_NAME" "$REPO_NAME-dylin"
+          echo "Created $REPO_NAME-dylin"
 
-      - name: Checkout Auto-PyMOP Repository
+      - name: Checkout Continuous-Analysis Repository
         uses: actions/checkout@v4
         with:
-          repository: ContinuousAnalysis/auto-pymop
-          path: auto-pymop
+          repository: ContinuousAnalysis/continuous-analysis
+          path: continuous-analysis
 
       - name: Run Original Test
         run: |
           # Extract just the repository name (without owner)
           REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
-          echo "Repository name: $REPO_NAME"
-          
-          python3 -m venv original-test-venv
-          source original-test-venv/bin/activate
-          chmod +x auto-pymop/scripts/run_original.sh
-          auto-pymop/scripts/run_original.sh $REPO_NAME
+
+          # Create a virtual environment and run the original test
+          python3 -m venv original-venv
+          source original-venv/bin/activate
+          chmod +x continuous-analysis/scripts/run_original.sh
+          continuous-analysis/scripts/run_original.sh $REPO_NAME
           deactivate
-          rm -rf original-test-venv
+          rm -rf original-venv
           rm -rf $REPO_NAME-original
 
       - name: Build PyMOP Docker Image
         run: |
-          sudo docker build -t pymop-runner auto-pymop/docker_files
+          sudo docker build -t pymop-runner continuous-analysis/docker_files
 
       - name: Run PyMOP on Testing Repository
         id: run_pymop
@@ -81,14 +84,14 @@ jobs:
         run: |
           # Extract just the repository name (without owner)
           REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
-          echo "Repository name: $REPO_NAME"
-          
+
+          # Run the PyMOP test in the Docker container
           docker run --rm \
             -v "${{ github.workspace }}:/local" \
             pymop-runner \
             bash -c "set -euxo pipefail && \
             ls -la /local && \
-            cp /local/auto-pymop/scripts/run_pymop.sh /workspace/run_pymop.sh && \
+            cp /local/continuous-analysis/scripts/run_pymop.sh /workspace/run_pymop.sh && \
             cp -r /local/$REPO_NAME-pymop /workspace && \
             source /workspace/pymop-venv/bin/activate && \
             chmod +x /workspace/run_pymop.sh && \

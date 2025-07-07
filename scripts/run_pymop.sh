@@ -14,7 +14,7 @@ fi
 echo "Running PyMOP for project: $PROJECT"
 
 # Go to project directory
-cd "$PROJECT"
+cd "$PROJECT-pymop"
 
 # Install github submodules if they exist
 if [ -f .gitmodules ]; then
