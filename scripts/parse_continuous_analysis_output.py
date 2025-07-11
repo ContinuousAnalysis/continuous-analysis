@@ -155,6 +155,9 @@ def get_num_violations_from_json():
                 line_num = violation_str.split('line_num:')[1].split(',')[0].strip()
                 location_key = f"{spec}:{file_name}:{line_num}"
 
+                # Add the violation to the unique violations by location
+                unique_violations_by_location[location_key] = unique_violations_by_location.get(location_key, 0) + 1
+
                 # Add the test id to the unique violations by test
                 if test_id_str is not None:
                     unique_violations_by_test[location_key] = unique_violations_by_test.get(location_key, set())
