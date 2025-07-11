@@ -64,9 +64,9 @@ jobs:
       - name: Download Latest Previous Artifact
         uses: actions/download-artifact@v4
         with:
-          name: continuous-analysis-results-${{ env.REPO_NAME }}-*
+          name: continuous-analysis-results-${{ inputs.project }}-*
           path: previous-artifacts/
-          pattern: continuous-analysis-results-${{ env.REPO_NAME }}-*
+          pattern: continuous-analysis-results-${{ inputs.project }}-*
           merge-multiple: false
         continue-on-error: true
 
@@ -148,7 +148,7 @@ jobs:
       - name: Upload Violation Reports
         uses: actions/upload-artifact@v4
         with:
-          name: continuous-analysis-results-${{ env.REPO_NAME }}-${{ steps.timestamp.outputs.ts }}
+          name: continuous-analysis-results-${{ inputs.project }}-${{ steps.timestamp.outputs.ts }}
           path: |
             continuous_analysis_over_time_results.csv
             continuous_analysis_results_*.csv
