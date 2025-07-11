@@ -75,8 +75,24 @@ jobs:
 
       - name: Track changes from the previous commit
         run: |
+          # Extract just the repository name (without owner)
+          REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
+          
+          echo "Debug: REPO_NAME = $REPO_NAME"
+          echo "Debug: Commit = ${{ inputs.commit }}"
+          echo "Debug: Current directory = $(pwd)"
+          echo "Debug: Directory contents:"
+          ls -la
+          
           pip install -r continuous-analysis/requirements.txt
-          python3 continuous-analysis/scripts/filter_new_violations.py $REPO_NAME-original ${{ inputs.commit }}
+          
+          # Only run the script if a commit is provided
+          if [ -n "${{ inputs.commit }}" ]; then
+            echo "Debug: Running script with repo path: $REPO_NAME-original"
+            python3 continuous-analysis/scripts/filter_new_violations.py $REPO_NAME-original ${{ inputs.commit }}
+          else
+            echo "No commit provided, skipping change tracking"
+          fi
 
       # COMMENT OUT THESE ACTIONS FOR TESTING PURPOSES
 
