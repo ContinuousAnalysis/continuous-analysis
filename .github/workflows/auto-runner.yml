@@ -7,7 +7,7 @@ on:
         required: true
         type: string
       commit:
-        required: false
+        required: true
         type: string
     secrets:
       ORG_WIDE_TOKEN:
@@ -26,43 +26,48 @@ jobs:
   prepare-and-trigger:
     runs-on: ubuntu-latest
     steps:
-      - name: Download Latest Artifact
+      - name: Download Latest Artifact from Input Repository
         env:
           GH_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
         run: |
-          echo "GH_TOKEN length: ${#GH_TOKEN}"
-      
-          ARTIFACT_JSON=$(gh api "repos/ContinuousAnalysis/requests/actions/artifacts" --paginate)
-          ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r '.artifacts[] | select(.name | startswith("continuous-analysis-results-requests-")) | .name' | head -n 1)
+          # Get the repository name from the input
+          REPO_NAME=$(basename "${{ inputs.project }}")
+
+          # Get the latest artifact from the input repository
+          ARTIFACT_JSON=$(gh api "repos/${{ inputs.project }}/actions/artifacts" --paginate)
+          ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r '.artifacts[] | select(.name | startswith("continuous-analysis-results-$REPO_NAME-")) | .name' | head -n 1)
           ARTIFACT_ID=$(echo "$ARTIFACT_JSON" | jq -r ".artifacts[] | select(.name==\"$ARTIFACT_NAME\") | .id")
-      
+
+          # If no artifact is found, skip the download
           if [ -z "$ARTIFACT_ID" ]; then
-            echo "No matching artifact found. Skipping download."
+            echo "No matching artifact found for ${{ inputs.project }}. Skipping download."
             mkdir -p previous-artifacts
             exit 0
           fi
-      
-          echo "Found artifact: $ARTIFACT_NAME (ID: $ARTIFACT_ID)"
+
+          # If the latest artifact is found, download it
+          echo "Found previous artifact: $ARTIFACT_NAME (ID: $ARTIFACT_ID) for ${{ inputs.project }}"
           curl -L \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/ContinuousAnalysis/requests/actions/artifacts/$ARTIFACT_ID/zip" \
+            "https://api.github.com/repos/${{ inputs.project }}/actions/artifacts/$ARTIFACT_ID/zip" \
             -o artifact.zip
-      
+
+          # Unzip the artifact to the previous-artifacts directory
           unzip artifact.zip -d previous-artifacts
 
-      - name: Prepare Artifact Data to be used in the auto-runner workflow
+      - name: Prepare Latest Artifact for the auto-runner workflow
         id: prepare-artifact
         run: |
-          # If the previous artifact is found, encode it
+          # If the latest artifact is found, move it to the root of the repository
           if [ -f "previous-artifacts/continuous_analysis_over_time_results.csv" ]; then
             echo "Previous artifact found, moving to the root of the repository"
             mv previous-artifacts/continuous_analysis_over_time_results.csv .
             echo "Previous artifact moved successfully"
 
-          # If the previous artifact is not found, skip the moving
+          # If the latest artifact is not found, skip the moving
           else
-            echo "No previous artifact found, skipping encoding"
+            echo "No latest artifact found, skipping moving"
           fi
 
           # Clean up the artifact directory
@@ -80,25 +85,26 @@ jobs:
           which docker
           docker --version
 
-      - name: Restore Previous Artifact from Input
+      - name: Debug the Existence of the Previous Artifact
         run: |
-          if [ -n "${{ inputs.previous-artifact-data }}" ]; then
-            echo "Decoding previous artifact data..."
-            echo "${{ inputs.previous-artifact-data }}" | base64 -d > continuous_analysis_over_time_results.csv
-            echo "Previous artifact restored successfully"
+          if [ -f "continuous_analysis_over_time_results.csv" ]; then
+            echo "YES: Previous artifact found in the root of the repository"
           else
-            echo "No previous artifact data provided"
+            echo "NO: Previous artifact not found in the root of the repository"
           fi
 
       - name: Checkout Testing Repository and create three copies for each analysis
         run: |
+          # Get the repository name from the input
           REPO_URL="https://github.com/${{ inputs.project }}.git"
           REPO_NAME=$(basename "${{ inputs.project }}")
           echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
-          
+
+          # Clone the repository
           git clone "$REPO_URL" "$REPO_NAME"
           cd "$REPO_NAME"
 
+          # Checkout the specific commit if provided
           if [ -n "${{ inputs.commit }}" ]; then
             echo "Checking out specific commit: ${{ inputs.commit }}"
             git checkout ${{ inputs.commit }}
@@ -106,8 +112,8 @@ jobs:
             echo "Using default branch"
           fi
 
+          # Create three copies of the repository for each analysis
           cd ..
-
           cp -r "$REPO_NAME" "$REPO_NAME-original"
           echo "Created $REPO_NAME-original"
           cp -r "$REPO_NAME" "$REPO_NAME-pymop"
