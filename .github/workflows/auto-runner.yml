@@ -179,7 +179,7 @@ jobs:
           
           # Only run the script if a commit is provided
           if [ -n "${{ inputs.commit }}" ]; then
-            python3 continuous-analysis/scripts/filter_new_violations.py $REPO_NAME-original ${{ inputs.commit }}
+            python3 continuous-analysis/scripts/track_commit_changes.py $REPO_NAME-original ${{ inputs.commit }}
           else
             echo "No commit provided, skipping change tracking"
           fi
