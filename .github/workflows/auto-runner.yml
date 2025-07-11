@@ -24,6 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download Latest Artifact
+        env:
+          GH_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
         run: |
           echo "GH_TOKEN length: ${#GH_TOKEN}"
       
@@ -45,8 +47,6 @@ jobs:
             -o artifact.zip
       
           unzip artifact.zip -d previous-artifacts
-        env:
-          GH_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
 
       - name: Prepare Artifact Data to be used in the auto-runner workflow
         id: prepare-artifact
