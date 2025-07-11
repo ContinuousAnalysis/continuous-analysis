@@ -33,6 +33,8 @@ df = pd.read_csv("continuous_analysis_over_time_results.csv")
 df_current_commit = df[df['commit_sha'] == current_sha]
 
 # Combine the violations from the current commit for both PyMOP and DyLin
+print(df_current_commit[df_current_commit['algorithm'] == 'pymop']['violations_by_location'].iloc[0])
+print(df_current_commit[df_current_commit['algorithm'] == 'dylin']['violations_by_location'].iloc[0])
 violations_current_commit_pymop = df_current_commit[df_current_commit['algorithm'] == 'pymop']['violations_by_location'].iloc[0].split(';') if not df_current_commit[df_current_commit['algorithm'] == 'pymop'].empty else []
 violations_current_commit_dylin = df_current_commit[df_current_commit['algorithm'] == 'dylin']['violations_by_location'].iloc[0].split(';') if not df_current_commit[df_current_commit['algorithm'] == 'dylin'].empty else []
 violations_current_commit = violations_current_commit_pymop + violations_current_commit_dylin
