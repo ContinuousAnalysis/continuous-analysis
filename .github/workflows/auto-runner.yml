@@ -34,6 +34,7 @@ jobs:
         run: |
           REPO_URL="https://github.com/${{ inputs.project }}.git"
           REPO_NAME=$(basename "${{ inputs.project }}")
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
           
           git clone "$REPO_URL" "$REPO_NAME"
           cd "$REPO_NAME"
@@ -62,9 +63,6 @@ jobs:
 
       - name: Run Original Test
         run: |
-          # Extract just the repository name (without owner)
-          REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
-
           # Create a virtual environment and run the original test
           python3 -m venv original-venv
           source original-venv/bin/activate
@@ -75,20 +73,12 @@ jobs:
 
       - name: Track changes from the previous commit
         run: |
-          # Extract just the repository name (without owner)
-          REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
-          
-          echo "Debug: REPO_NAME = $REPO_NAME"
-          echo "Debug: Commit = ${{ inputs.commit }}"
-          echo "Debug: Current directory = $(pwd)"
-          echo "Debug: Directory contents:"
-          ls -la
-          
+          # Install the requirements for the script
           pip install -r continuous-analysis/requirements.txt
+          echo
           
           # Only run the script if a commit is provided
           if [ -n "${{ inputs.commit }}" ]; then
-            echo "Debug: Running script with repo path: $REPO_NAME-original"
             python3 continuous-analysis/scripts/filter_new_violations.py $REPO_NAME-original ${{ inputs.commit }}
           else
             echo "No commit provided, skipping change tracking"
@@ -104,9 +94,6 @@ jobs:
       #   id: run_pymop
       #   shell: bash
       #   run: |
-      #     # Extract just the repository name (without owner)
-      #     REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
-
       #     # Run the PyMOP test in the Docker container
       #     docker run --rm \
       #       -v "${{ github.workspace }}:/local" \
@@ -123,9 +110,6 @@ jobs:
 
       # - name: Run DyLin on Testing Repository
       #   run: |
-      #     # Extract just the repository name (without owner)
-      #     REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
-
       #     # Create a virtual environment and run the test with DyLin
       #     python3 -m venv dylin-venv
       #     source dylin-venv/bin/activate
@@ -137,14 +121,8 @@ jobs:
 
       # - name: Parse Continuous-Analysis Output for Violations
       #   run: |
-      #     # Extract just the repository name (without owner)
-      #     REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
-          
       #     # Parse the continuous-analysis-output folder
       #     python3 continuous-analysis/scripts/parse_continuous_analysis_output.py $REPO_NAME
-          
-      #     # Set the repository name as an environment variable for the next step
-      #     echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
 
       # - name: Upload Violation Reports
       #   uses: actions/upload-artifact@v4

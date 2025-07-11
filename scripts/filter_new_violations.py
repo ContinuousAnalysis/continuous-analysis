@@ -1,8 +1,22 @@
 from git import Repo
 from unidiff import PatchSet
+
 import sys
 from collections import defaultdict
 
+
+"""
+This script is used to track the changes between two commits in a repository.
+It should return the following information:
+- Any renames happened in the commit
+- The line number offsets of the old file to the new file (used to get the corresponding line number of the new file from the old file)
+- The new file changes (line ranges that were added/modified)
+
+The line number offsets can be used to get the line number of the new file from the old file by subtracting the offset from the line number of the old file.
+- line_number_new = line_number_old - offset
+
+The new file changes can be filtered out the violations that are from the changed code which should always be considered as new violations.
+"""
 
 def track_changes(repo_path: str, old_sha: str, new_sha: str):
     """
@@ -98,58 +112,70 @@ def track_changes(repo_path: str, old_sha: str, new_sha: str):
     # Return the detailed changes
     return detailed_changes
 
+
 # ================================
 # Main function
 # ================================
 
-# Get the project path and sha of the current commit from the command line
-# Usage: python filter_new_violations.py <repo_path> <current_commit_sha>
-repo_path = sys.argv[1]
-current_sha = sys.argv[2]
 
-# Get the parent sha of the current commit
-# This allows us to compare the current commit with its immediate predecessor
-repo = Repo(repo_path)
-commit = repo.commit(current_sha)
-parent_sha = commit.parents[0].hexsha if commit.parents else None
+def main():
+    # Get the project path and sha of the current commit from the command line
+    # Usage: python filter_new_violations.py <repo_path> <current_commit_sha>
+    repo_path = sys.argv[1]
+    current_sha = sys.argv[2]
 
-# Print the project info for debugging
-print(f"Project path: {repo_path}")
-print(f"Current SHA: {current_sha}")
-print(f"Parent SHA: {parent_sha}")
+    # Get the parent sha of the current commit
+    # This allows us to compare the current commit with its immediate predecessor
+    repo = Repo(repo_path)
+    commit = repo.commit(current_sha)
+    parent_sha = commit.parents[0].hexsha if commit.parents else None
 
-# Track the changes between the current and parent commit
-# If there's no parent (initial commit), use empty data structures
-if parent_sha:
-    changes = track_changes(repo_path, parent_sha, current_sha)
-else:
-    changes = {
-        'renames': {},
-        'offsets': {},
-        'new_file_changes': {}
-    }
+    # Print the project info for debugging
+    print(f"Project path: {repo_path}")
+    print(f"Current SHA: {current_sha}")
+    print(f"Parent SHA: {parent_sha}")
+
+    # Track the changes between the current and parent commit
+    # If there's no parent (initial commit), use empty data structures
+    if parent_sha:
+        changes = track_changes(repo_path, parent_sha, current_sha)
+    else:
+        changes = {
+            'renames': {},
+            'offsets': {},
+            'new_file_changes': {}
+        }
+
+    return changes
+
 
 # ================================
+# Script entry point for testing purposes
 # Print the results for each file that had changes
 # ================================
 
-# Print any file renames that occurred
-if changes['renames']:
-    print("\nRenamed files:")
-    for new, old in changes['renames'].items():
-        print(f"- {old} -> {new}")
-    print()
 
-for filename in changes['offsets']:
-    
-    # Convert the filename to the original filename if it was renamed
-    new_filename = filename
-    old_filename = filename
-    if changes['renames'].get(filename) is not None:
-        old_filename = changes['renames'][filename]
+if __name__ == "__main__":
+    # Get the changes between the current and parent commit
+    changes = main()
+
+    # Print any file renames that occurred
+    if changes['renames']:
+        print("\nRenamed files:")
+        for new, old in changes['renames'].items():
+            print(f"- {old} -> {new}")
+        print()
+
+    for filename in changes['offsets']:
         
-    print(f"\nFile: {old_filename}:")
-    print(f"- Offsets: {changes['offsets'][filename]}")
+        # Convert the filename to the original filename if it was renamed
+        new_filename = filename
+        old_filename = filename
+        if changes['renames'].get(filename) is not None:
+            old_filename = changes['renames'][filename]
+            
+        print(f"\nFile: {old_filename}:")
+        print(f"- Offsets: {changes['offsets'][filename]}")
 
-    if new_filename in changes['new_file_changes']:
-        print(f"- New file changes: {changes['new_file_changes'][new_filename]}")
+        if new_filename in changes['new_file_changes']:
+            print(f"- New file changes: {changes['new_file_changes'][new_filename]}")
