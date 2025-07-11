@@ -365,8 +365,8 @@ def append_to_results_over_time(lines, commit_sha):
         print('No data to append.')
         return
 
-    # Check if pymop_results_over_time.csv exists
-    file_exists = os.path.isfile('pymop_over_time_results.csv')
+    # Check if continuous_analysis_over_time_results.csv exists
+    file_exists = os.path.isfile('continuous_analysis_over_time_results.csv')
 
     # Open the CSV file for appending
     with open('continuous_analysis_over_time_results.csv', 'a', newline='', encoding='utf-8') as f:
