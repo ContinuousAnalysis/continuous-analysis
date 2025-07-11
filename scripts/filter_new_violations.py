@@ -40,12 +40,8 @@ violations_current_commit = violations_current_commit_pymop + violations_current
 # Parse each violations to a list of tuples (spec, filepath, line_num)
 violations_current_commit_tuples = []
 for violation in violations_current_commit:
-    try:
-        spec, filepath, line_num = violation.split('=')[0].split(':')
-        violations_current_commit_tuples.append((spec, filepath, line_num))
-    except ValueError:
-        print(f"Error parsing violation: {violation}")
-        continue
+    spec, filepath, line_num = violation.split('=')[0].split(':')
+    violations_current_commit_tuples.append((spec, filepath, line_num))
 
 # Filter the rows where the commit_sha is the parent commit
 df_parent_commit = df[df['commit_sha'] == parent_sha]
@@ -63,12 +59,8 @@ else:
     # Parse each violations to a list of tuples (spec, filepath, line_num)
     violations_parent_commit_tuples = []
     for violation in violations_parent_commit:
-        try:
-            spec, filepath, line_num = violation.split('=')[0].split(':')
-            violations_parent_commit_tuples.append((spec, filepath, line_num))
-        except ValueError:
-            print(f"Error parsing violation: {violation}")
-            continue
+        spec, filepath, line_num = violation.split('=')[0].split(':')
+        violations_parent_commit_tuples.append((spec, filepath, line_num))
 
 # Get the changes between the current and parent commit
 if not first_time_running and parent_sha:

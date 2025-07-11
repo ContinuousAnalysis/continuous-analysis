@@ -151,8 +151,14 @@ def get_num_violations_from_json():
 
             # Add the violation to the unique violations by location
             if 'file_name:' in violation_str and 'line_num:' in violation_str:
-                file_name = violation_str.split('file_name:')[1].split(',')[0].strip()
-                line_num = violation_str.split('line_num:')[1].strip()
+                violations_str_parts = violation_str.split(',')
+                file_name = None
+                line_num = None
+                for part in violations_str_parts:
+                    if 'file_name:' in part:
+                        file_name = part.split('file_name:')[1].strip()
+                    if 'line_num:' in part:
+                        line_num = part.split('line_num:')[1].strip()
                 location_key = f"{spec}:{file_name}:{line_num}"
                 unique_violations_by_location[location_key] = unique_violations_by_location.get(location_key, 0) + 1
 
