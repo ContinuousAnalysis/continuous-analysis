@@ -72,6 +72,7 @@ else:
 if not first_time_running and parent_sha:
     # Get the changes between the current and parent commit
     changes = track_changes(repo_path, parent_sha, current_sha)
+    print(changes)
 
     # Filter the violations_current_commit_tuples to only include new violations that are not in the parent commit
     violations_current_commit_tuples_filtered = []
@@ -149,6 +150,7 @@ else:
     parent_sha = ''
     violations_parent_commit = []
     violations_current_commit_filtered = []
+    print("No parent commit found or first time running. No filtering done.")
 
 # Store the filtered violations in a new csv file
 line = OrderedDict({
