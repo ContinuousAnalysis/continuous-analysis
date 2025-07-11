@@ -9,6 +9,9 @@ on:
       commit:
         required: false
         type: string
+    secrets:
+      ORG_WIDE_TOKEN:
+        required: true
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
