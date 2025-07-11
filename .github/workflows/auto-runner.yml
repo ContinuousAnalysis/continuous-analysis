@@ -71,6 +71,44 @@ jobs:
           deactivate
           rm -rf original-venv
 
+      - name: Build PyMOP Docker Image
+        run: |
+          sudo docker build -t pymop-runner continuous-analysis/docker_files
+
+      - name: Run PyMOP on Testing Repository
+        id: run_pymop
+        shell: bash
+        run: |
+          # Run the PyMOP test in the Docker container
+          docker run --rm \
+            -v "${{ github.workspace }}:/local" \
+            pymop-runner \
+            bash -c "set -euxo pipefail && \
+            ls -la /local && \
+            cp /local/continuous-analysis/scripts/run_pymop.sh /workspace/run_pymop.sh && \
+            cp -r /local/$REPO_NAME-pymop /workspace && \
+            rm -rf /local/$REPO_NAME-pymop && \
+            source /workspace/pymop-venv/bin/activate && \
+            chmod +x /workspace/run_pymop.sh && \
+            /workspace/run_pymop.sh $REPO_NAME && \
+            deactivate"
+
+      - name: Run DyLin on Testing Repository
+        run: |
+          # Create a virtual environment and run the test with DyLin
+          python3 -m venv dylin-venv
+          source dylin-venv/bin/activate
+          chmod +x continuous-analysis/scripts/run_dylin.sh
+          continuous-analysis/scripts/run_dylin.sh $REPO_NAME
+          deactivate
+          rm -rf dylin-venv
+          rm -rf $REPO_NAME-dylin
+
+      - name: Parse Continuous-Analysis Output for Violations
+        run: |
+          # Parse the continuous-analysis-output folder
+          python3 continuous-analysis/scripts/parse_continuous_analysis_output.py $REPO_NAME ${{ inputs.commit }}
+
       - name: Track changes from the previous commit
         run: |
           # Install the requirements for the script
@@ -84,51 +122,12 @@ jobs:
             echo "No commit provided, skipping change tracking"
           fi
 
-      # COMMENT OUT THESE ACTIONS FOR TESTING PURPOSES
-
-      # - name: Build PyMOP Docker Image
-      #   run: |
-      #     sudo docker build -t pymop-runner continuous-analysis/docker_files
-
-      # - name: Run PyMOP on Testing Repository
-      #   id: run_pymop
-      #   shell: bash
-      #   run: |
-      #     # Run the PyMOP test in the Docker container
-      #     docker run --rm \
-      #       -v "${{ github.workspace }}:/local" \
-      #       pymop-runner \
-      #       bash -c "set -euxo pipefail && \
-      #       ls -la /local && \
-      #       cp /local/continuous-analysis/scripts/run_pymop.sh /workspace/run_pymop.sh && \
-      #       cp -r /local/$REPO_NAME-pymop /workspace && \
-      #       rm -rf /local/$REPO_NAME-pymop && \
-      #       source /workspace/pymop-venv/bin/activate && \
-      #       chmod +x /workspace/run_pymop.sh && \
-      #       /workspace/run_pymop.sh $REPO_NAME && \
-      #       deactivate"
-
-      # - name: Run DyLin on Testing Repository
-      #   run: |
-      #     # Create a virtual environment and run the test with DyLin
-      #     python3 -m venv dylin-venv
-      #     source dylin-venv/bin/activate
-      #     chmod +x continuous-analysis/scripts/run_dylin.sh
-      #     continuous-analysis/scripts/run_dylin.sh $REPO_NAME
-      #     deactivate
-      #     rm -rf dylin-venv
-      #     rm -rf $REPO_NAME-dylin
-
-      # - name: Parse Continuous-Analysis Output for Violations
-      #   run: |
-      #     # Parse the continuous-analysis-output folder
-      #     python3 continuous-analysis/scripts/parse_continuous_analysis_output.py $REPO_NAME
-
-      # - name: Upload Violation Reports
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #     name: continuous-analysis-results-${{ env.REPO_NAME }}-${{ github.run_id }}
-      #     path: |
-      #       continuous-analysis-results_*.csv
-      #       continuous-analysis-output/
-      #     retention-days: 30
+      - name: Upload Violation Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: continuous-analysis-results-${{ env.REPO_NAME }}-${{ github.run_id }}
+          path: |
+            continuous-analysis-over-time-results.csv
+            continuous-analysis-results_*.csv
+            continuous-analysis-output/
+          retention-days: 30
