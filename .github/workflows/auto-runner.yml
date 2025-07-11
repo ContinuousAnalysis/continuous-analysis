@@ -23,9 +23,17 @@ permissions:
   issues: write
 
 jobs:
-  prepare-and-trigger:
+  auto-runner:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+
     steps:
+      - name: Debug Docker Path and Version
+        run: |
+          echo "PATH is: $PATH"
+          which docker
+          docker --version
+
       - name: Download Latest Artifact from Input Repository
         env:
           GH_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
@@ -72,18 +80,6 @@ jobs:
 
           # Clean up the artifact directory
           rm -rf previous-artifacts/
-    
-  auto-runner:
-    needs: prepare-and-trigger
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-
-    steps:
-      - name: Debug Docker Path and Version
-        run: |
-          echo "PATH is: $PATH"
-          which docker
-          docker --version
 
       - name: Debug the Existence of the Previous Artifact
         run: |
