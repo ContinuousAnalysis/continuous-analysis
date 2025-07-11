@@ -87,6 +87,7 @@ jobs:
 
       - name: Debug the Existence of the Previous Artifact
         run: |
+          ls -la
           if [ -f "continuous_analysis_over_time_results.csv" ]; then
             echo "YES: Previous artifact found in the root of the repository"
           else
