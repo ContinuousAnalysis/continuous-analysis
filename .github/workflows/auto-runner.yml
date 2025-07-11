@@ -9,6 +9,9 @@ on:
       commit:
         required: false
         type: string
+      previous-artifact-data:
+        required: false
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -29,6 +32,16 @@ jobs:
           echo "PATH is: $PATH"
           which docker
           docker --version
+
+      - name: Restore Previous Artifact from Input
+        run: |
+          if [ -n "${{ inputs.previous-artifact-data }}" ]; then
+            echo "Decoding previous artifact data..."
+            echo "${{ inputs.previous-artifact-data }}" | base64 -d > continuous_analysis_over_time_results.csv
+            echo "Previous artifact restored successfully"
+          else
+            echo "No previous artifact data provided"
+          fi
 
       - name: Checkout Testing Repository and create three copies for each analysis
         run: |
@@ -60,22 +73,6 @@ jobs:
         with:
           repository: ContinuousAnalysis/continuous-analysis
           path: continuous-analysis
-
-      - name: Download Latest Previous Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: continuous-analysis-results-${{ inputs.project }}-*
-          path: previous-artifacts/
-          pattern: continuous-analysis-results-${{ inputs.project }}-*
-          merge-multiple: false
-        continue-on-error: true
-
-      - name: Restore Latest Previous Artifact
-        if: hashFiles('previous-artifacts/continuous_analysis_over_time_results.csv') != ''
-        run: |
-          ls -la previous-artifacts/
-          cp -r previous-artifacts/continuous_analysis_over_time_results.csv .
-          rm -rf previous-artifacts/
 
       - name: Run Original Test
         run: |
@@ -148,7 +145,7 @@ jobs:
       - name: Upload Violation Reports
         uses: actions/upload-artifact@v4
         with:
-          name: continuous-analysis-results-${{ inputs.project }}-${{ steps.timestamp.outputs.ts }}
+          name: continuous-analysis-results-${{ env.REPO_NAME }}-${{ steps.timestamp.outputs.ts }}
           path: |
             continuous_analysis_over_time_results.csv
             continuous_analysis_results_*.csv
