@@ -40,10 +40,11 @@ jobs:
         run: |
           # Get the repository name from the input
           REPO_NAME=$(basename "${{ inputs.project }}")
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
 
           # Get the latest artifact from the input repository
           ARTIFACT_JSON=$(gh api "repos/${{ inputs.project }}/actions/artifacts" --paginate)
-          ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r '.artifacts[] | select(.name | startswith("continuous-analysis-results-$REPO_NAME-")) | .name' | head -n 1)
+          ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r '.artifacts[] | select(.name | startswith("continuous-analysis-results-${{ env.REPO_NAME }}-")) | .name' | head -n 1)
           ARTIFACT_ID=$(echo "$ARTIFACT_JSON" | jq -r ".artifacts[] | select(.name==\"$ARTIFACT_NAME\") | .id")
 
           # If no artifact is found, skip the download
@@ -92,10 +93,8 @@ jobs:
 
       - name: Checkout Testing Repository and create three copies for each analysis
         run: |
-          # Get the repository name from the input
+          # Define the repository URL
           REPO_URL="https://github.com/${{ inputs.project }}.git"
-          REPO_NAME=$(basename "${{ inputs.project }}")
-          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
 
           # Clone the repository
           git clone "$REPO_URL" "$REPO_NAME"
