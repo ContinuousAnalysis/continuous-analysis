@@ -44,7 +44,7 @@ jobs:
 
           # Get the latest artifact from the input repository
           ARTIFACT_JSON=$(gh api "repos/${{ inputs.project }}/actions/artifacts" --paginate)
-          ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r '.artifacts[] | select(.name | startswith("continuous-analysis-results-${{ env.REPO_NAME }}-")) | .name' | head -n 1)
+          ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r --arg REPO_NAME "$REPO_NAME" '.artifacts[] | select(.name | startswith("continuous-analysis-results-\($REPO_NAME)-")) | .name' | head -n 1)
           ARTIFACT_ID=$(echo "$ARTIFACT_JSON" | jq -r ".artifacts[] | select(.name==\"$ARTIFACT_NAME\") | .id")
 
           # If no artifact is found, skip the download
