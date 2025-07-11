@@ -127,7 +127,7 @@ jobs:
         with:
           name: continuous-analysis-results-${{ env.REPO_NAME }}-${{ github.run_id }}
           path: |
-            continuous-analysis-over-time-results.csv
-            continuous-analysis-results_*.csv
+            continuous_analysis_over_time_results.csv
+            continuous_analysis_results_*.csv
             continuous-analysis-output/
           retention-days: 30
