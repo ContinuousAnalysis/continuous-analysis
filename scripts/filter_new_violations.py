@@ -40,6 +40,7 @@ violations_current_commit = violations_current_commit_pymop + violations_current
 # Parse each violations to a list of tuples (spec, filepath, line_num)
 violations_current_commit_tuples = []
 for violation in violations_current_commit:
+    print(violation)
     spec, filepath, line_num = violation.split('=')[0].split(':')
     violations_current_commit_tuples.append((spec, filepath, line_num))
 
