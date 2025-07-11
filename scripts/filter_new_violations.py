@@ -33,10 +33,11 @@ df = pd.read_csv("continuous_analysis_over_time_results.csv")
 df_current_commit = df[df['commit_sha'] == current_sha]
 
 # Combine the violations from the current commit for both PyMOP and DyLin
-print(df_current_commit[df_current_commit['algorithm'] == 'pymop']['violations_by_location'].iloc[0])
-print(df_current_commit[df_current_commit['algorithm'] == 'dylin']['violations_by_location'].iloc[0])
-violations_current_commit_pymop = df_current_commit[df_current_commit['algorithm'] == 'pymop']['violations_by_location'].iloc[0].split(';') if not df_current_commit[df_current_commit['algorithm'] == 'pymop'].empty else []
-violations_current_commit_dylin = df_current_commit[df_current_commit['algorithm'] == 'dylin']['violations_by_location'].iloc[0].split(';') if not df_current_commit[df_current_commit['algorithm'] == 'dylin'].empty else []
+pymop_value = df_current_commit[df_current_commit['algorithm'] == 'pymop']['violations_by_location'].iloc[0] if not df_current_commit[df_current_commit['algorithm'] == 'pymop'].empty else None
+dylin_value = df_current_commit[df_current_commit['algorithm'] == 'dylin']['violations_by_location'].iloc[0] if not df_current_commit[df_current_commit['algorithm'] == 'dylin'].empty else None
+
+violations_current_commit_pymop = pymop_value.split(';') if pymop_value is not None and pd.notna(pymop_value) else []
+violations_current_commit_dylin = dylin_value.split(';') if dylin_value is not None and pd.notna(dylin_value) else []
 violations_current_commit = violations_current_commit_pymop + violations_current_commit_dylin
 
 # Parse each violations to a list of tuples (spec, filepath, line_num)
@@ -54,8 +55,11 @@ if df_parent_commit.empty:
     first_time_running = True
 else:
     # Get the violations from the parent commit
-    violations_parent_commit_pymop = df_parent_commit[df_parent_commit['algorithm'] == 'pymop']['violations_by_location'].iloc[0].split(';') if not df_parent_commit[df_parent_commit['algorithm'] == 'pymop'].empty else []
-    violations_parent_commit_dylin = df_parent_commit[df_parent_commit['algorithm'] == 'dylin']['violations_by_location'].iloc[0].split(';') if not df_parent_commit[df_parent_commit['algorithm'] == 'dylin'].empty else []
+    pymop_parent_value = df_parent_commit[df_parent_commit['algorithm'] == 'pymop']['violations_by_location'].iloc[0] if not df_parent_commit[df_parent_commit['algorithm'] == 'pymop'].empty else None
+    dylin_parent_value = df_parent_commit[df_parent_commit['algorithm'] == 'dylin']['violations_by_location'].iloc[0] if not df_parent_commit[df_parent_commit['algorithm'] == 'dylin'].empty else None
+    
+    violations_parent_commit_pymop = pymop_parent_value.split(';') if pymop_parent_value is not None and pd.notna(pymop_parent_value) else []
+    violations_parent_commit_dylin = dylin_parent_value.split(';') if dylin_parent_value is not None and pd.notna(dylin_parent_value) else []
     violations_parent_commit = violations_parent_commit_pymop + violations_parent_commit_dylin
 
     # Parse each violations to a list of tuples (spec, filepath, line_num)
