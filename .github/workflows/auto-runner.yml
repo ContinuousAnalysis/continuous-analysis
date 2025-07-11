@@ -9,20 +9,65 @@ on:
       commit:
         required: false
         type: string
-      previous-artifact-data:
-        required: false
-        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:
+  actions: read
   contents: write
   issues: write
 
 jobs:
+  prepare-and-trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Latest Previous Artifact from this repo
+        run: |          
+          ARTIFACT_JSON=$(gh api "repos/${{ github.repository }}/actions/artifacts" --paginate)
+          ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r '.artifacts[] | select(.name | startswith("continuous-analysis-results-requests-")) | .name' | head -n 1)
+          ARTIFACT_ID=$(echo "$ARTIFACT_JSON" | jq -r ".artifacts[] | select(.name==\"$ARTIFACT_NAME\") | .id")
+
+          # If no artifact is found, skip the download
+          if [ -z "$ARTIFACT_ID" ]; then
+            echo "No matching artifact found. Skipping download."
+            mkdir -p previous-artifacts
+            exit 0
+          fi
+
+          # If the latest artifact is found, download it
+          echo "Found artifact: $ARTIFACT_NAME (ID: $ARTIFACT_ID)"
+          curl -L \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip" \
+            -o artifact.zip
+
+          # Unzip the artifact for further processing
+          unzip artifact.zip -d previous-artifacts
+        env:
+          GH_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
+
+      - name: Prepare Artifact Data to be used in the auto-runner workflow
+        id: prepare-artifact
+        run: |
+          # If the previous artifact is found, encode it
+          if [ -f "previous-artifacts/continuous_analysis_over_time_results.csv" ]; then
+            echo "Previous artifact found, moving to the root of the repository"
+            mv previous-artifacts/continuous_analysis_over_time_results.csv .
+            echo "Previous artifact moved successfully"
+
+          # If the previous artifact is not found, skip the moving
+          else
+            echo "No previous artifact found, skipping encoding"
+          fi
+
+          # Clean up the artifact directory
+          rm -rf previous-artifacts/
+    
   auto-runner:
+    needs: prepare-and-trigger
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
