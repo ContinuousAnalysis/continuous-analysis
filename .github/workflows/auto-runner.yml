@@ -72,62 +72,69 @@ jobs:
           continuous-analysis/scripts/run_original.sh $REPO_NAME
           deactivate
           rm -rf original-venv
-          rm -rf $REPO_NAME-original
 
-      - name: Build PyMOP Docker Image
+      - name: Track changes from the previous commit
         run: |
-          sudo docker build -t pymop-runner continuous-analysis/docker_files
+          pip install -r continuous-analysis/requirements.txt
+          python3 continuous-analysis/scripts/filter_new_violations.py $REPO_NAME-original ${{ inputs.commit }}
 
-      - name: Run PyMOP on Testing Repository
-        id: run_pymop
-        shell: bash
-        run: |
-          # Extract just the repository name (without owner)
-          REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
+      # COMMENT OUT THESE ACTIONS FOR TESTING PURPOSES
 
-          # Run the PyMOP test in the Docker container
-          docker run --rm \
-            -v "${{ github.workspace }}:/local" \
-            pymop-runner \
-            bash -c "set -euxo pipefail && \
-            ls -la /local && \
-            cp /local/continuous-analysis/scripts/run_pymop.sh /workspace/run_pymop.sh && \
-            cp -r /local/$REPO_NAME-pymop /workspace && \
-            source /workspace/pymop-venv/bin/activate && \
-            chmod +x /workspace/run_pymop.sh && \
-            /workspace/run_pymop.sh $REPO_NAME && \
-            deactivate"
+      # - name: Build PyMOP Docker Image
+      #   run: |
+      #     sudo docker build -t pymop-runner continuous-analysis/docker_files
 
-      - name: Run DyLin on Testing Repository
-        run: |
-          # Extract just the repository name (without owner)
-          REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
+      # - name: Run PyMOP on Testing Repository
+      #   id: run_pymop
+      #   shell: bash
+      #   run: |
+      #     # Extract just the repository name (without owner)
+      #     REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
 
-          # Create a virtual environment and run the original test
-          python3 -m venv dylin-venv
-          source dylin-venv/bin/activate
-          chmod +x continuous-analysis/scripts/run_dylin.sh
-          continuous-analysis/scripts/run_dylin.sh $REPO_NAME
-          deactivate
-          rm -rf dylin-venv
-          rm -rf $REPO_NAME-dylin
+      #     # Run the PyMOP test in the Docker container
+      #     docker run --rm \
+      #       -v "${{ github.workspace }}:/local" \
+      #       pymop-runner \
+      #       bash -c "set -euxo pipefail && \
+      #       ls -la /local && \
+      #       cp /local/continuous-analysis/scripts/run_pymop.sh /workspace/run_pymop.sh && \
+      #       cp -r /local/$REPO_NAME-pymop /workspace && \
+      #       rm -rf /local/$REPO_NAME-pymop && \
+      #       source /workspace/pymop-venv/bin/activate && \
+      #       chmod +x /workspace/run_pymop.sh && \
+      #       /workspace/run_pymop.sh $REPO_NAME && \
+      #       deactivate"
 
-      - name: Parse Continuous-Analysis Output for Violations
-        run: |
-          # Extract just the repository name (without owner)
-          REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
+      # - name: Run DyLin on Testing Repository
+      #   run: |
+      #     # Extract just the repository name (without owner)
+      #     REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
+
+      #     # Create a virtual environment and run the test with DyLin
+      #     python3 -m venv dylin-venv
+      #     source dylin-venv/bin/activate
+      #     chmod +x continuous-analysis/scripts/run_dylin.sh
+      #     continuous-analysis/scripts/run_dylin.sh $REPO_NAME
+      #     deactivate
+      #     rm -rf dylin-venv
+      #     rm -rf $REPO_NAME-dylin
+
+      # - name: Parse Continuous-Analysis Output for Violations
+      #   run: |
+      #     # Extract just the repository name (without owner)
+      #     REPO_NAME=$(echo "${{ inputs.project }}" | sed 's/.*\///')
           
-          # Parse the continuous-analysis-output folder
-          python3 continuous-analysis/scripts/parse_continuous_analysis_output.py $REPO_NAME
+      #     # Parse the continuous-analysis-output folder
+      #     python3 continuous-analysis/scripts/parse_continuous_analysis_output.py $REPO_NAME
           
-          # Set the repository name as an environment variable for the next step
-          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+      #     # Set the repository name as an environment variable for the next step
+      #     echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
 
-      - name: Upload Violation Reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: continuous-analysis-results-${{ env.REPO_NAME }}-${{ github.run_id }}
-          path: |
-            continuous-analysis-results_*.csv
-            continuous-analysis-output/
-          retention-days: 30
+      # - name: Upload Violation Reports
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: continuous-analysis-results-${{ env.REPO_NAME }}-${{ github.run_id }}
+      #     path: |
+      #       continuous-analysis-results_*.csv
+      #       continuous-analysis-output/
+      #     retention-days: 30
