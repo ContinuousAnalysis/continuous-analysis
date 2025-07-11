@@ -23,28 +23,27 @@ jobs:
   prepare-and-trigger:
     runs-on: ubuntu-latest
     steps:
-      - name: Download Latest Previous Artifact from this repo
-        run: |          
-          ARTIFACT_JSON=$(gh api "repos/${{ github.repository }}/actions/artifacts" --paginate)
+      - name: Download Latest Artifact
+        run: |
+          echo "GH_TOKEN length: ${#GH_TOKEN}"
+      
+          ARTIFACT_JSON=$(gh api "repos/ContinuousAnalysis/requests/actions/artifacts" --paginate)
           ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r '.artifacts[] | select(.name | startswith("continuous-analysis-results-requests-")) | .name' | head -n 1)
           ARTIFACT_ID=$(echo "$ARTIFACT_JSON" | jq -r ".artifacts[] | select(.name==\"$ARTIFACT_NAME\") | .id")
-
-          # If no artifact is found, skip the download
+      
           if [ -z "$ARTIFACT_ID" ]; then
             echo "No matching artifact found. Skipping download."
             mkdir -p previous-artifacts
             exit 0
           fi
-
-          # If the latest artifact is found, download it
+      
           echo "Found artifact: $ARTIFACT_NAME (ID: $ARTIFACT_ID)"
           curl -L \
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip" \
+            "https://api.github.com/repos/ContinuousAnalysis/requests/actions/artifacts/$ARTIFACT_ID/zip" \
             -o artifact.zip
-
-          # Unzip the artifact for further processing
+      
           unzip artifact.zip -d previous-artifacts
         env:
           GH_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
