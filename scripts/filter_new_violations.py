@@ -79,16 +79,16 @@ if not first_time_running and parent_sha:
     for violation in violations_current_commit_tuples:
         spec = violation[0]
         filepath = violation[1]
-        line_num = violation[2]
+        line_num = int(violation[2])
         # If the violation is from python or site-packages, we cannot match changes, direct compare with parent commit
         if 'python3' in filepath or 'site-packages' in filepath:
             if violation not in violations_parent_commit_tuples:
                 violations_current_commit_tuples_filtered.append(violation)
         else:  # If the violation is from the testing repository
-            if '-pymop' in filepath:
-                filepath = filepath.split('-pymop')[1]
-            elif '-dylin' in filepath:
-                filepath = filepath.split('-dylin')[1]
+            if '-pymop/' in filepath:
+                filepath = filepath.split('-pymop/')[1]
+            elif '-dylin/' in filepath:
+                filepath = filepath.split('-dylin/')[1]
                 # Remove the last 5 characters of the filepath (.orig)
                 filepath = filepath[:-5]
 
@@ -119,17 +119,20 @@ if not first_time_running and parent_sha:
                         if old_filepath in violation_parent[1]:
 
                             # Get the offseted line number
-                            offseted_line_num = violation_parent[2]
+                            offseted_line_num = int(violation_parent[2])
                             sorted_start_lines = sorted(changes['offsets'][filepath].keys())
                             for i in range(len(sorted_start_lines)):
-                                if violation_parent[2] < sorted_start_lines[i]:
+                                if int(violation_parent[2]) < sorted_start_lines[i]:
                                     if i != 0:
-                                        offseted_line_num = offseted_line_num + sorted_start_lines[i-1]
+                                        offseted_line_num = offseted_line_num + changes['offsets'][filepath][sorted_start_lines[i-1]]
                                     break
+                                if int(violation_parent[2]) >= sorted_start_lines[i] and i == len(sorted_start_lines) - 1:
+                                    offseted_line_num = offseted_line_num + changes['offsets'][filepath][sorted_start_lines[i]]
 
                             # Check if the offseted line number matched the line number of the current commit
                             if offseted_line_num == line_num and spec == violation_parent[0]:
                                 violation_in_parent_commit = True
+                                break
                     
                     # If the violation is not in the parent commit, add it to the filtered list
                     if not violation_in_parent_commit:
