@@ -61,6 +61,22 @@ jobs:
           repository: ContinuousAnalysis/continuous-analysis
           path: continuous-analysis
 
+      - name: Download Latest Previous Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: continuous-analysis-results-${{ env.REPO_NAME }}-*
+          path: previous-artifacts/
+          pattern: continuous-analysis-results-${{ env.REPO_NAME }}-*
+          merge-multiple: false
+        continue-on-error: true
+
+      - name: Restore Latest Previous Artifact
+        if: hashFiles('previous-artifacts/continuous_analysis_over_time_results.csv') != ''
+        run: |
+          ls -la previous-artifacts/
+          cp -r previous-artifacts/continuous_analysis_over_time_results.csv .
+          rm -rf previous-artifacts/
+
       - name: Run Original Test
         run: |
           # Create a virtual environment and run the original test
@@ -122,10 +138,17 @@ jobs:
             echo "No commit provided, skipping change tracking"
           fi
 
+      - name: Generate timestamp
+        id: timestamp
+        run: |
+          ts=$(date +'%Y%m%d-%H%M')
+          echo "ts=$ts" >> "$GITHUB_OUTPUT"
+          echo "Generated timestamp: $ts"
+
       - name: Upload Violation Reports
         uses: actions/upload-artifact@v4
         with:
-          name: continuous-analysis-results-${{ env.REPO_NAME }}-${{ github.run_id }}
+          name: continuous-analysis-results-${{ env.REPO_NAME }}-${{ steps.timestamp.outputs.ts }}
           path: |
             continuous_analysis_over_time_results.csv
             continuous_analysis_results_*.csv
