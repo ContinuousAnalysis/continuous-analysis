@@ -68,7 +68,7 @@ jobs:
       - name: Prepare Latest Artifact for the auto-runner workflow
         id: prepare-artifact
         run: |
-          # If the latest artifact is found, move it to the root of the repository
+          # If the latest artifact is found, move results file to the root of the repository
           if [ -f "previous-artifacts/continuous_analysis_over_time_results.csv" ]; then
             echo "Previous artifact found, moving to the root of the repository"
             mv previous-artifacts/continuous_analysis_over_time_results.csv .
@@ -76,7 +76,18 @@ jobs:
 
           # If the latest artifact is not found, skip the moving
           else
-            echo "No latest artifact found, skipping moving"
+            echo "No latest results file found, skipping moving"
+          fi
+
+          # If the latest artifact is found, move violations file to the root of the repository
+          if [ -f "previous-artifacts/continuous_analysis_over_time_violations_filtered.csv" ]; then
+            echo "Previous artifact found, moving to the root of the repository"
+            mv previous-artifacts/continuous_analysis_over_time_violations_filtered.csv .
+            echo "Previous artifact moved successfully"
+
+          # If the latest artifact is not found, skip the moving
+          else
+            echo "No latest violations file found, skipping moving"
           fi
 
           # Clean up the artifact directory
@@ -171,15 +182,14 @@ jobs:
           # Parse the continuous-analysis-output folder
           python3 continuous-analysis/scripts/parse_continuous_analysis_output.py $REPO_NAME ${{ inputs.commit }}
 
-      - name: Track changes from the previous commit
+      - name: Filter out the New Violations based on the Commit Changes
         run: |
           # Install the requirements for the script
           pip install -r continuous-analysis/requirements.txt
-          echo
-          
+
           # Only run the script if a commit is provided
           if [ -n "${{ inputs.commit }}" ]; then
-            python3 continuous-analysis/scripts/track_commit_changes.py $REPO_NAME-original ${{ inputs.commit }}
+            python3 continuous-analysis/scripts/filter_new_violations.py $REPO_NAME-original ${{ inputs.commit }}
           else
             echo "No commit provided, skipping change tracking"
           fi
@@ -197,6 +207,7 @@ jobs:
           name: continuous-analysis-results-${{ env.REPO_NAME }}-${{ steps.timestamp.outputs.ts }}
           path: |
             continuous_analysis_over_time_results.csv
+            continuous_analysis_over_time_violations_filtered.csv
             continuous_analysis_results_*.csv
             continuous-analysis-output/
           retention-days: 30
