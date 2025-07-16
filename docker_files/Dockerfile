@@ -41,7 +41,8 @@ ENV PATH="$JAVA_HOME/bin:$PATH"
 WORKDIR /workspace
 
 # Clone the pymop testing repository in continuous-analysis
-RUN git clone https://github.com/continuous-analysis/pymop.git
+ARG GITHUB_TOKEN
+RUN git clone https://${GITHUB_TOKEN}@github.com/continuous-analysis/pymop.git
 
 # Copy and execute the install script, then remove it
 COPY pymop_install.sh /workspace/pymop_install.sh
