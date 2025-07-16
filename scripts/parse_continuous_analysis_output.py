@@ -423,7 +423,7 @@ def append_to_results_over_time(lines, commit_sha):
             except Exception as e:
                 print('could not write line:', line.keys(), str(e))
 
-def main(project: str, commit_sha: str, history_analysis: bool):
+def main(project: str, commit_sha: str):
     """Main function to process projects and generate results"""
     # Get the timestamp for the current run
     timestamp = datetime.now().strftime("%Y%m%d_%H%M")
@@ -830,17 +830,12 @@ def main(project: str, commit_sha: str, history_analysis: bool):
     print(f'created continuous_analysis_results_{timestamp}.csv')
 
     # Append the results to the continuous_analysis_over_time_results.csv file
-    if not history_analysis:
-        print("\n====== APPENDING TO RESULTS OVER TIME ======\n")
-        print(f'appending to continuous_analysis_over_time_results.csv')
-        append_to_results_over_time(lines, commit_sha)
-        print('appended to continuous_analysis_over_time_results.csv')
+    print("\n====== APPENDING TO RESULTS OVER TIME ======\n")
+    print(f'appending to continuous_analysis_over_time_results.csv')
+    append_to_results_over_time(lines, commit_sha)
+    print('appended to continuous_analysis_over_time_results.csv')
 
 if __name__ == "__main__":
     project = sys.argv[1]
     commit_sha = sys.argv[2]
-    if len(sys.argv) > 3:
-        history_analysis = bool(sys.argv[3])
-    else:
-        history_analysis = False
-    main(project, commit_sha, history_analysis)
+    main(project, commit_sha)
