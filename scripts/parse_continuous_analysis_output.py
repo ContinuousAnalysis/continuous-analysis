@@ -842,5 +842,5 @@ if __name__ == "__main__":
     if len(sys.argv) > 3:
         history_analysis = bool(sys.argv[3])
     else:
-        history_analysis = True
+        history_analysis = False
     main(project, commit_sha, history_analysis)
