@@ -86,9 +86,14 @@ jobs:
           deactivate
           rm -rf original-venv
 
+      - name: Clone PyMOP Testing Repository
+        run: |
+          git clone https://x-access-token:${{ secrets.ORG_WIDE_TOKEN }}@github.com/ContinuousAnalysis/pymop.git
+          cp -r pymop continuous-analysis/docker_files
+
       - name: Build PyMOP Docker Image
         run: |
-          sudo docker build --build-arg GITHUB_TOKEN=${{ secrets.ORG_WIDE_TOKEN }} -t pymop-runner continuous-analysis/docker_files
+          sudo docker build -t pymop-runner continuous-analysis/docker_files
 
       - name: Run PyMOP on Testing Repository
         id: run_pymop
