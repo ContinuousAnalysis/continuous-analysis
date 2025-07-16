@@ -1,0 +1,15 @@
+Tasks for 07/07/2025 - 07/09/2025:
++ (Done) Fixed the bug with caching the last commit sha run in the workflow.
++ (Done) Fixed bugs with running original tests (likely path issues)
++ (Done) Fixed the path issue for running the project tests with PyMOP.
++ (Done) In addition to storing the final results, stored the logs of the three runs in the artifact as well.
++ (Done) Added Dylin to the workflow and run the project tests with DyLin.
++ (Done) Extended the log parsing scripts for original tests, tests with PyMOP and tests with DyLin.
+
+Tasks for 07/10/2025 - 07/11/2025:
++ (Done) Found a way to cache the results csv between different workflow runs to filter out new violations
++ (Done) Implemented the violation differencing mechanism to find new violations between two commits
++ (Done) Created a toy project to test the workflow implementation.
++ (Done) Changed the log parsing scripts to include the tests triggered by each violation for PyMOP
++ (Done) Polished the workflow to use a centralized repo-name environment variable
+
