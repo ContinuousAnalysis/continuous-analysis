@@ -42,6 +42,10 @@ jobs:
 
       - name: Checkout Testing Repository and create three copies for each analysis
         run: |
+          # Get the repository name from the input
+          REPO_NAME=$(basename "${{ inputs.project }}")
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+
           # Define the repository URL
           REPO_URL="https://github.com/${{ inputs.project }}.git"
 
