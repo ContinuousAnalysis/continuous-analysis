@@ -133,7 +133,7 @@ jobs:
         run: |
           mkdir -p $REPO_NAME-results-${{ inputs.commit }}
           cp continuous_analysis_results_*.csv $REPO_NAME-results-${{ inputs.commit }}
-          cp continuous-analysis-output/* $REPO_NAME-results-${{ inputs.commit }}
+          cp -r continuous-analysis-output $REPO_NAME-results-${{ inputs.commit }}
           zip -r $REPO_NAME-results-${{ inputs.commit }}.zip $REPO_NAME-results-${{ inputs.commit }}
 
       - name: Create Release (if not exists)
