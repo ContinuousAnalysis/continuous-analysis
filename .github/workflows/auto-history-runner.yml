@@ -19,10 +19,6 @@ on:
       ORG_WIDE_TOKEN:
         required: true
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
-
 permissions:
   actions: read
   contents: write
