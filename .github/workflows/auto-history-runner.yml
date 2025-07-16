@@ -11,7 +11,7 @@ on:
         description: 'Commit to analyze'
         required: true
         type: string
-      release_name:
+      release-name:
         description: 'Name of the release to upload artifacts to'
         required: true
         type: string
@@ -131,8 +131,8 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ inputs.release_name }}
-          name: ${{ inputs.release_name }}
+          tag_name: ${{ inputs.release-name }}
+          name: ${{ inputs.release-name }}
           draft: false
           prerelease: true
           repository: ${{ inputs.project }}
@@ -142,8 +142,8 @@ jobs:
       - name: Upload Violation Reports to Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ inputs.release_name }}
-          name: ${{ inputs.release_name }}
+          tag_name: ${{ inputs.release-name }}
+          name: ${{ inputs.release-name }}
           files: |
             $REPO_NAME-results-${{ inputs.commit }}.zip
         env:
