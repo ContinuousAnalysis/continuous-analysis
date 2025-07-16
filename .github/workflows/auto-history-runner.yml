@@ -154,6 +154,6 @@ jobs:
           tag_name: ${{ inputs.release-name }}
           name: ${{ inputs.release-name }}
           files: |
-            $REPO_NAME-results-${{ inputs.commit }}.zip
+            ${{ env.REPO_NAME }}-results-${{ inputs.commit }}.zip
         env:
           GITHUB_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
