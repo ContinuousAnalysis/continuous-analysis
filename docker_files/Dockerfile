@@ -40,8 +40,8 @@ ENV PATH="$JAVA_HOME/bin:$PATH"
 # Set working directory
 WORKDIR /workspace
 
-# Clone the pymop-artifacts-rv repository
-RUN git clone https://github.com/allrob23/pymop-artifacts-rv.git
+# Clone the pymop testing repository in continuous-analysis
+RUN git clone https://github.com/continuous-analysis/pymop.git
 
 # Copy and execute the install script, then remove it
 COPY pymop_install.sh /workspace/pymop_install.sh

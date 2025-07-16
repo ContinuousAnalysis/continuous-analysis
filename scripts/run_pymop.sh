@@ -43,7 +43,7 @@ pip install .
 TEST_START_TIME=$(python3 -c 'import time; print(time.time())')
 
 # Run PyMOP
-timeout -k 9 3600 pytest -W ignore::DeprecationWarning --path=$PWD/../pymop-artifacts-rv/pymop/specs-new \
+timeout -k 9 3600 pytest -W ignore::DeprecationWarning --path=$PWD/../pymop/pymop/specs-new \
        --algo=D \
        --continue-on-collection-errors \
        --statistics \
