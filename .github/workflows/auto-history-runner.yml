@@ -128,6 +128,7 @@ jobs:
       - name: Package the results into a zip file
         run: |
           mkdir -p $REPO_NAME-results-${{ inputs.commit }}
+          cp continuous_analysis_over_time_results.csv $REPO_NAME-results-${{ inputs.commit }}
           cp continuous_analysis_results_*.csv $REPO_NAME-results-${{ inputs.commit }}
           cp -r continuous-analysis-output $REPO_NAME-results-${{ inputs.commit }}
           zip -r $REPO_NAME-results-${{ inputs.commit }}.zip $REPO_NAME-results-${{ inputs.commit }}
