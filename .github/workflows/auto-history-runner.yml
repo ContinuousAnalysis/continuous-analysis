@@ -1,0 +1,150 @@
+name: Auto Continuous Analysis Runners for Commit History
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        description: 'Project to analyze'
+        required: true
+        type: string
+      commit:
+        description: 'Commit to analyze'
+        required: true
+        type: string
+      release_name:
+        description: 'Name of the release to upload artifacts to'
+        required: true
+        type: string
+    secrets:
+      ORG_WIDE_TOKEN:
+        required: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: write
+  issues: write
+
+jobs:
+  auto-runner:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Debug Docker Path and Version
+        run: |
+          echo "PATH is: $PATH"
+          which docker
+          docker --version
+
+      - name: Checkout Testing Repository and create three copies for each analysis
+        run: |
+          # Define the repository URL
+          REPO_URL="https://github.com/${{ inputs.project }}.git"
+
+          # Clone the repository
+          git clone "$REPO_URL" "$REPO_NAME"
+          cd "$REPO_NAME"
+
+          # Checkout the specific commit if provided
+          if [ -n "${{ inputs.commit }}" ]; then
+            echo "Checking out specific commit: ${{ inputs.commit }}"
+            git checkout ${{ inputs.commit }}
+          else
+            echo "Using default branch"
+          fi
+
+          # Create three copies of the repository for each analysis
+          cd ..
+          cp -r "$REPO_NAME" "$REPO_NAME-original"
+          echo "Created $REPO_NAME-original"
+          cp -r "$REPO_NAME" "$REPO_NAME-pymop"
+          echo "Created $REPO_NAME-pymop"
+          cp -r "$REPO_NAME" "$REPO_NAME-dylin"
+          echo "Created $REPO_NAME-dylin"
+
+      - name: Checkout Continuous-Analysis Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ContinuousAnalysis/continuous-analysis
+          path: continuous-analysis
+
+      - name: Run Original Test
+        run: |
+          # Create a virtual environment and run the original test
+          python3 -m venv original-venv
+          source original-venv/bin/activate
+          chmod +x continuous-analysis/scripts/run_original.sh
+          continuous-analysis/scripts/run_original.sh $REPO_NAME
+          deactivate
+          rm -rf original-venv
+
+      - name: Build PyMOP Docker Image
+        run: |
+          sudo docker build -t pymop-runner continuous-analysis/docker_files
+
+      - name: Run PyMOP on Testing Repository
+        id: run_pymop
+        shell: bash
+        run: |
+          # Run the PyMOP test in the Docker container
+          docker run --rm \
+            -v "${{ github.workspace }}:/local" \
+            pymop-runner \
+            bash -c "set -euxo pipefail && \
+            ls -la /local && \
+            cp /local/continuous-analysis/scripts/run_pymop.sh /workspace/run_pymop.sh && \
+            cp -r /local/$REPO_NAME-pymop /workspace && \
+            rm -rf /local/$REPO_NAME-pymop && \
+            source /workspace/pymop-venv/bin/activate && \
+            chmod +x /workspace/run_pymop.sh && \
+            /workspace/run_pymop.sh $REPO_NAME && \
+            deactivate"
+
+      - name: Run DyLin on Testing Repository
+        run: |
+          # Create a virtual environment and run the test with DyLin
+          python3 -m venv dylin-venv
+          source dylin-venv/bin/activate
+          chmod +x continuous-analysis/scripts/run_dylin.sh
+          continuous-analysis/scripts/run_dylin.sh $REPO_NAME
+          deactivate
+          rm -rf dylin-venv
+          rm -rf $REPO_NAME-dylin
+
+      - name: Parse Continuous-Analysis Output for Violations
+        run: |
+          # Parse the continuous-analysis-output folder
+          python3 continuous-analysis/scripts/parse_continuous_analysis_output.py $REPO_NAME ${{ inputs.commit }} true
+
+      - name: Package the results into a zip file
+        run: |
+          mkdir -p $REPO_NAME-results-${{ inputs.commit }}
+          cp continuous_analysis_results_*.csv $REPO_NAME-results-${{ inputs.commit }}
+          cp continuous-analysis-output/* $REPO_NAME-results-${{ inputs.commit }}
+          zip -r $REPO_NAME-results-${{ inputs.commit }}.zip $REPO_NAME-results-${{ inputs.commit }}
+
+      - name: Create Release (if not exists)
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.release_name }}
+          name: ${{ inputs.release_name }}
+          draft: false
+          prerelease: true
+          repository: ${{ inputs.project }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
+
+      - name: Upload Violation Reports to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.release_name }}
+          name: ${{ inputs.release_name }}
+          files: |
+            $REPO_NAME-results-${{ inputs.commit }}.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
