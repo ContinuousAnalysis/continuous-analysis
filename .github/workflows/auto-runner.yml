@@ -21,7 +21,7 @@ permissions:
 jobs:
   auto-runner:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
 
     steps:
       - name: Debug Docker Path and Version
@@ -89,14 +89,11 @@ jobs:
           # Clean up the artifact directory
           rm -rf previous-artifacts/
 
-      - name: Debug the Existence of the Previous Artifact
-        run: |
-          ls -la
-          if [ -f "continuous_analysis_over_time_results.csv" ]; then
-            echo "YES: Previous artifact found in the root of the repository"
-          else
-            echo "NO: Previous artifact not found in the root of the repository"
-          fi
+      - name: Checkout Continuous-Analysis Repository
+        uses: actions/checkout@v4
+        with:
+          repository: ContinuousAnalysis/continuous-analysis
+          path: continuous-analysis
 
       - name: Checkout Testing Repository and create three copies for each analysis
         run: |
@@ -123,12 +120,6 @@ jobs:
           echo "Created $REPO_NAME-pymop"
           cp -r "$REPO_NAME" "$REPO_NAME-dylin"
           echo "Created $REPO_NAME-dylin"
-
-      - name: Checkout Continuous-Analysis Repository
-        uses: actions/checkout@v4
-        with:
-          repository: ContinuousAnalysis/continuous-analysis
-          path: continuous-analysis
 
       - name: Run Original Test
         run: |
