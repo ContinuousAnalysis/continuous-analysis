@@ -39,6 +39,9 @@ fi
 # Install the project with all optional dependencies
 pip install .
 
+#Install pytest
+pip install pytest
+
 # Record the start time of the test execution
 TEST_START_TIME=$(python3 -c 'import time; print(time.time())')
 
