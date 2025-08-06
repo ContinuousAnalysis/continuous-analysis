@@ -159,8 +159,11 @@ else:
 line = OrderedDict({
     'current_commit_sha': current_sha,
     'parent_commit_sha': parent_sha,
-    'current_filtered_violations': ';'.join(violations_current_commit_filtered),
+    'num_new_violations': len(violations_current_commit_filtered),
+    'new_violations': ';'.join(violations_current_commit_filtered),
+    'num_current_violations': len(violations_current_commit),
     'current_violations': ';'.join(violations_current_commit),
+    'num_parent_violations': len(violations_parent_commit),
     'parent_violations': ';'.join(violations_parent_commit),
 })
 

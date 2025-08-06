@@ -273,6 +273,7 @@ def create_base_data_structure(project, algorithm):
     """
     return OrderedDict({
         'project': project,
+        'commit_sha': 'x',
         'algorithm': algorithm,
         'passed': 0,
         'failed': 0,
@@ -520,6 +521,7 @@ def main(project: str, commit_sha: str):
         print(f'No pymop folder found for {project}')
         line = OrderedDict({
             'project': project,
+            'commit_sha': 'x',
             'algorithm': 'pymop',
             'passed': 'x',
             'failed': 'x',
@@ -657,6 +659,7 @@ def main(project: str, commit_sha: str):
         print(f'No dylin folder found for {project}')
         line = OrderedDict({
             'project': project,
+            'commit_sha': 'x',
             'algorithm': 'dylin',
             'passed': 'x',
             'failed': 'x',
