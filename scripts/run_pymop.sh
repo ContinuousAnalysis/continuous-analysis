@@ -29,11 +29,11 @@ for file in requirements*.txt; do
 done
 
 # Install additional required dependencies
-if [ -f /local/projects_requirements/${PROJECT}_requirements.txt ]; then
-    echo "Installing additional required dependencies from local/projects_requirements/${PROJECT}_requirements.txt"
-    pip install -r /local/projects_requirements/${PROJECT}_requirements.txt
+if [ -f /local/continuous-analysis/projects_requirements/${PROJECT}_requirements.txt ]; then
+    echo "Installing additional required dependencies from local/continuous-analysis/projects_requirements/${PROJECT}_requirements.txt"
+    pip install -r /local/continuous-analysis/projects_requirements/${PROJECT}_requirements.txt
 else
-    echo "No additional required dependencies found in local/projects_requirements/${PROJECT}_requirements.txt"
+    echo "No additional required dependencies found in local/continuous-analysis/projects_requirements/${PROJECT}_requirements.txt"
 fi
 
 # Install the project with all optional dependencies
