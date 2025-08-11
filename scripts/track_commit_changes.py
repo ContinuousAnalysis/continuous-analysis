@@ -18,7 +18,7 @@ The line number offsets can be used to get the line number of the new file from 
 The new file changes can be filtered out the violations that are from the changed code which should always be considered as new violations.
 """
 
-def track_changes(repo_path: str, old_sha: str, new_sha: str):
+def track_changes(repo_path: str, old_sha: str, new_sha: str) -> dict:
     """
     Track the changes between two commits in a repository.
 
@@ -35,6 +35,20 @@ def track_changes(repo_path: str, old_sha: str, new_sha: str):
     diff_str = repo.git.diff(old_sha, new_sha, unified=0, find_renames=True)
     patch = PatchSet(diff_str)
 
+    # Process the patch data to extract changes
+    return process_patch_data(patch)
+
+
+def process_patch_data(patch: PatchSet) -> dict:
+    """
+    Process the patch data to extract changes information.
+
+    Args:
+        patch: A PatchSet object containing the diff information.
+
+    Returns:
+        A dictionary containing the processed changes between the two commits.
+    """
     # Declare variables needed for tracking changes
     renames = {}  # Dictionary to track file renames (new filename -> old filename)
     offsets = {}  # Dictionary to track line number offsets of the old file to the new file (file -> line number -> cumulative offset)
