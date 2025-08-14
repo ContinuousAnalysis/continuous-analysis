@@ -18,6 +18,7 @@ The line number offsets can be used to get the line number of the new file from 
 The new file changes can be filtered out the violations that are from the changed code which should always be considered as new violations.
 """
 
+
 def track_changes(repo_path: str, old_sha: str, new_sha: str) -> dict:
     """
     Track the changes between two commits in a repository.
@@ -51,15 +52,21 @@ def process_patch_data(patch: PatchSet) -> dict:
     """
     # Declare variables needed for tracking changes
     renames = {}  # Dictionary to track file renames (new filename -> old filename)
-    offsets = {}  # Dictionary to track line number offsets of the old file to the new file (file -> line number -> cumulative offset)
-    new_file_changes = defaultdict(list)  # Dictionary to track new file changes (file -> list of (start, end) tuples in new file)
+    offsets = (
+        {}
+    )  # Dictionary to track line number offsets of the old file to the new file (file -> line number -> cumulative offset)
+    new_file_changes = defaultdict(
+        list
+    )  # Dictionary to track new file changes (file -> list of (start, end) tuples in new file)
 
     # Iterate over the patched files
     for patched_file in patch:
 
         # Get the old and new filenames
-        old_file = patched_file.source_file.lstrip('a/')
-        new_file = patched_file.target_file.lstrip('b/')
+        if patched_file.source_file.startswith("a/"):
+            old_file = patched_file.source_file[2:]  # Remove 'a/' prefix
+        if patched_file.target_file.startswith("b/"):
+            new_file = patched_file.target_file[2:]  # Remove 'b/' prefix
 
         # Record renames (if the file has been renamed)
         if old_file != new_file:
@@ -88,14 +95,16 @@ def process_patch_data(patch: PatchSet) -> dict:
                 if line.is_added:
                     cumulative_offset += 1  # Add one more line to the cumulative offset
                     # Update the current new change range
-                    if hasattr(line, 'target_line_no') and line.target_line_no:
+                    if hasattr(line, "target_line_no") and line.target_line_no:
                         if current_new_start is None:
                             current_new_start = line.target_line_no
                         current_new_end = line.target_line_no
 
                 # If the line was removed
                 elif line.is_removed:
-                    cumulative_offset -= 1  # Subtract one line from the cumulative offset
+                    cumulative_offset -= (
+                        1  # Subtract one line from the cumulative offset
+                    )
                     # No need to update the current new change range as the line was removed from the old file
                     # This have no effect on the new file
 
@@ -103,7 +112,9 @@ def process_patch_data(patch: PatchSet) -> dict:
                 elif line.is_context:
                     # Save the current new change range if it exists
                     if current_new_start is not None and current_new_end is not None:
-                        new_file_changes[filename].append((current_new_start, current_new_end))
+                        new_file_changes[filename].append(
+                            (current_new_start, current_new_end)
+                        )
                         # Reset the current new change range
                         current_new_start = None
                         current_new_end = None
@@ -118,9 +129,9 @@ def process_patch_data(patch: PatchSet) -> dict:
 
     # Format the changes into a comprehensive result structure
     detailed_changes = {
-        'renames': renames,
-        'offsets': offsets,
-        'new_file_changes': dict(new_file_changes)
+        "renames": renames,
+        "offsets": offsets,
+        "new_file_changes": dict(new_file_changes),
     }
 
     # Return the detailed changes
@@ -181,13 +192,13 @@ def process_patch_data(patch: PatchSet) -> dict:
 #         print()
 
 #     for filename in changes['offsets']:
-        
+
 #         # Convert the filename to the original filename if it was renamed
 #         new_filename = filename
 #         old_filename = filename
 #         if changes['renames'].get(filename) is not None:
 #             old_filename = changes['renames'][filename]
-            
+
 #         print(f"\nFile: {old_filename}:")
 #         print(f"- Offsets: {changes['offsets'][filename]}")
 
