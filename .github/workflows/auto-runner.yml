@@ -43,10 +43,13 @@ jobs:
 
           # Get the latest artifact from the input repository
           ARTIFACT_JSON=$(gh api "repos/${{ inputs.project }}/actions/artifacts" --paginate)
+
+          # If the dispatch_id is provided, use it to get the latest artifact
           if [ -n "${{ inputs.dispatch_id }}" ]; then
-            ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r --arg REPO_NAME "$REPO_NAME" '.artifacts[] | select(.name | startswith("continuous-analysis-results-\($REPO_NAME)-")) | .name' | head -n 1)
-          else
             ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r --arg REPO_NAME "$REPO_NAME" '.artifacts[] | select(.name | startswith("continuous-analysis-results-history-\(${inputs.dispatch_id})-\($REPO_NAME)-")) | .name' | head -n 1)
+          # If the dispatch_id is not provided, use the latest artifact
+          else
+            ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r --arg REPO_NAME "$REPO_NAME" '.artifacts[] | select(.name | startswith("continuous-analysis-results-\($REPO_NAME)-")) | .name' | head -n 1)
           fi
           ARTIFACT_ID=$(echo "$ARTIFACT_JSON" | jq -r ".artifacts[] | select(.name==\"$ARTIFACT_NAME\") | .id")
 
