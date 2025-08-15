@@ -66,3 +66,56 @@ index 3333333..4444444 100644
     result = process_patch_data(patch)
     assert "a.py" in result["new_file_changes"]
     assert "b.py" in result["new_file_changes"]
+
+
+def test_multiple_hunks():
+    diff = """diff --git a/c.py b/c.py
+index 5555555..6666666 100644
+--- a/c.py
++++ b/c.py
+@@ -2,0 +2,2 @@
++new line 1
++new line 2
+@@ -3,2 +5,2 @@
+-old line 3
++new line 3
+-old line 4
++new line 4
+@@ -10,0 +12,2 @@
++new line 5
++new line 6
+"""
+    patch = PatchSet(diff)
+    result = process_patch_data(patch)
+    assert result["offsets"]["c.py"] == {2: 2, 3: 2, 10: 4}
+
+
+def test_multiple_files_multiple_hunks():
+    diff = """diff --git a/d.py b/d.py
+index 7777777..8888888 100644
+--- a/d.py
++++ b/d.py
+@@ -0,0 +1,2 @@
++new line 1
++new line 2
+@@ -5,2 +7,0 @@
+-old line 3
+-old line 4
+
+diff --git a/a.py b/a.py
+index 1111111..2222222 100644
+--- a/a.py
++++ b/a.py
+@@ -0,0 +1,2 @@
++new line 1
++new line 2
+@@ -3,2 +5,2 @@
+-old line 3
++new line 3
+-old line 4
++new line 4
+"""
+    patch = PatchSet(diff)
+    result = process_patch_data(patch)
+    assert result["offsets"]["a.py"] == {0: 2, 3: 2}
+    assert result["offsets"]["d.py"] == {0: 2, 5: 0}
