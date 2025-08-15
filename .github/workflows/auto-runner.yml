@@ -37,20 +37,28 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
         run: |
-          # Get the repository name from the input
+          # Get the repository name and dispatch IDfrom the input
           REPO_NAME=$(basename "${{ inputs.project }}")
+          DISPATCH_ID="${{ inputs.dispatch_id }}"
+
+          # Set the repository name in the environment
           echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+
+          # Build the name prefix we expect
+          if [ -n "$DISPATCH_ID" ]; then
+            ARTIFACT_PREFIX="continuous-analysis-results-history-${DISPATCH_ID}-${REPO_NAME}-"
+          else
+            ARTIFACT_PREFIX="continuous-analysis-results-${REPO_NAME}-"
+          fi
+          echo "Looking for artifacts with prefix: $ARTIFACT_PREFIX"
 
           # Get the latest artifact from the input repository
           ARTIFACT_JSON=$(gh api "repos/${{ inputs.project }}/actions/artifacts" --paginate)
 
-          # If the dispatch_id is provided, use it to get the latest artifact
-          if [ -n "${{ inputs.dispatch_id }}" ]; then
-            ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r --arg REPO_NAME "$REPO_NAME" '.artifacts[] | select(.name | startswith("continuous-analysis-results-history-\(${inputs.dispatch_id})-\($REPO_NAME)-")) | .name' | head -n 1)
-          # If the dispatch_id is not provided, use the latest artifact
-          else
-            ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r --arg REPO_NAME "$REPO_NAME" '.artifacts[] | select(.name | startswith("continuous-analysis-results-\($REPO_NAME)-")) | .name' | head -n 1)
-          fi
+          # Get the latest artifact from the input repository
+          ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r --arg PREFIX "$ARTIFACT_PREFIX" '.artifacts[] | select(.name | startswith($PREFIX)) | [.name, .created_at] | @tsv' | sort -k2 -r | head -n 1 | cut -f1)
+
+          # Get the artifact ID from the input repository
           ARTIFACT_ID=$(echo "$ARTIFACT_JSON" | jq -r ".artifacts[] | select(.name==\"$ARTIFACT_NAME\") | .id")
 
           # If no artifact is found, skip the download
