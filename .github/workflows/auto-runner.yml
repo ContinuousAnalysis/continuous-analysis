@@ -9,6 +9,9 @@ on:
       commit:
         required: true
         type: string
+      dispatch_id:
+        required: false
+        type: string
     secrets:
       ORG_WIDE_TOKEN:
         required: true
@@ -40,7 +43,11 @@ jobs:
 
           # Get the latest artifact from the input repository
           ARTIFACT_JSON=$(gh api "repos/${{ inputs.project }}/actions/artifacts" --paginate)
-          ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r --arg REPO_NAME "$REPO_NAME" '.artifacts[] | select(.name | startswith("continuous-analysis-results-\($REPO_NAME)-")) | .name' | head -n 1)
+          if [ -n "${{ inputs.dispatch_id }}" ]; then
+            ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r --arg REPO_NAME "$REPO_NAME" '.artifacts[] | select(.name | startswith("continuous-analysis-results-\($REPO_NAME)-")) | .name' | head -n 1)
+          else
+            ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r --arg REPO_NAME "$REPO_NAME" '.artifacts[] | select(.name | startswith("continuous-analysis-results-history-\(${inputs.dispatch_id})-\($REPO_NAME)-")) | .name' | head -n 1)
+          fi
           ARTIFACT_ID=$(echo "$ARTIFACT_JSON" | jq -r ".artifacts[] | select(.name==\"$ARTIFACT_NAME\") | .id")
 
           # If no artifact is found, skip the download
@@ -191,7 +198,7 @@ jobs:
       - name: Upload Violation Reports
         uses: actions/upload-artifact@v4
         with:
-          name: continuous-analysis-results-${{ env.REPO_NAME }}-${{ steps.timestamp.outputs.ts }}
+          name: ${{ inputs.dispatch_id && format('continuous-analysis-results-history-{0}-{1}-{2}', inputs.dispatch_id, env.REPO_NAME, steps.timestamp.outputs.ts) || format('continuous-analysis-results-{0}-{1}', env.REPO_NAME, steps.timestamp.outputs.ts) }}
           path: |
             continuous_analysis_over_time_results.csv
             continuous_analysis_over_time_violations_filtered.csv
