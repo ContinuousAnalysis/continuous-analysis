@@ -273,6 +273,7 @@ def create_base_data_structure(project, algorithm):
     """
     return OrderedDict({
         'project': project,
+        'timestamp': 'x',
         'commit_sha': 'x',
         'algorithm': algorithm,
         'passed': 0,
@@ -355,7 +356,7 @@ def results_csv_file(lines, timestamp):
             except Exception as e:
                 print('could not write line:', line.keys(), str(e))
 
-def append_to_results_over_time(lines, commit_sha):
+def append_to_results_over_time(lines, commit_sha, timestamp):
     """
     Append results to a CSV file that tracks results over time
 
@@ -380,6 +381,10 @@ def append_to_results_over_time(lines, commit_sha):
         # Add commit_sha to fieldnames if it's not already there
         if 'commit_sha' not in fieldnames:
             fieldnames.append('commit_sha')
+
+        # Add timestamp to fieldnames if it's not already there
+        if 'timestamp' not in fieldnames:
+            fieldnames.append('timestamp')
         
         # Create the writer object
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -417,6 +422,9 @@ def append_to_results_over_time(lines, commit_sha):
 
             # Add commit_sha to the line
             line['commit_sha'] = commit_sha
+
+            # Add timestamp to the line
+            line['timestamp'] = timestamp
 
             # Write the line to the CSV file and handle any errors
             try:
@@ -521,6 +529,7 @@ def main(project: str, commit_sha: str):
         print(f'No pymop folder found for {project}')
         line = OrderedDict({
             'project': project,
+            'timestamp': 'x',
             'commit_sha': 'x',
             'algorithm': 'pymop',
             'passed': 'x',
@@ -659,6 +668,7 @@ def main(project: str, commit_sha: str):
         print(f'No dylin folder found for {project}')
         line = OrderedDict({
             'project': project,
+            'timestamp': 'x',
             'commit_sha': 'x',
             'algorithm': 'dylin',
             'passed': 'x',
@@ -835,7 +845,7 @@ def main(project: str, commit_sha: str):
     # Append the results to the continuous_analysis_over_time_results.csv file
     print("\n====== APPENDING TO RESULTS OVER TIME ======\n")
     print(f'appending to continuous_analysis_over_time_results.csv')
-    append_to_results_over_time(lines, commit_sha)
+    append_to_results_over_time(lines, commit_sha, timestamp)
     print('appended to continuous_analysis_over_time_results.csv')
 
 if __name__ == "__main__":

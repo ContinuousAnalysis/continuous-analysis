@@ -56,10 +56,11 @@ jobs:
           ARTIFACT_JSON=$(gh api "repos/${{ inputs.project }}/actions/artifacts" --paginate)
 
           # Get the latest artifact from the input repository
-          ARTIFACT_NAME=$(echo "$ARTIFACT_JSON" | jq -r --arg PREFIX "$ARTIFACT_PREFIX" '.artifacts[] | select(.name | startswith($PREFIX)) | [.name, .created_at] | @tsv' | sort -k2 -r | head -n 1 | cut -f1)
-
-          # Get the artifact ID from the input repository
-          ARTIFACT_ID=$(echo "$ARTIFACT_JSON" | jq -r ".artifacts[] | select(.name==\"$ARTIFACT_NAME\") | .id")
+          ARTIFACT_INFO=$(echo "$ARTIFACT_JSON" | jq -r --arg PREFIX "$ARTIFACT_PREFIX" '.artifacts[] | select(.name | startswith($PREFIX)) | [.name, .created_at, .id] | @tsv' | sort -k2 -r | head -n 1)
+          
+          # Extract name and ID from the result
+          ARTIFACT_NAME=$(echo "$ARTIFACT_INFO" | cut -f1)
+          ARTIFACT_ID=$(echo "$ARTIFACT_INFO" | cut -f3)
 
           # If no artifact is found, skip the download
           if [ -z "$ARTIFACT_ID" ]; then
@@ -209,7 +210,7 @@ jobs:
       - name: Upload Violation Reports
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.dispatch_id && format('continuous-analysis-results-history-{0}-{1}-{2}', inputs.dispatch_id, env.REPO_NAME, inputs.commit) || format('continuous-analysis-results-{0}-{1}-{2}', env.REPO_NAME, inputs.commit, steps.timestamp.outputs.ts) }}
+          name: ${{ inputs.dispatch_id && format('continuous-analysis-history-results-{0}-{1}-{2}', inputs.dispatch_id, env.REPO_NAME, inputs.commit) || format('continuous-analysis-results-{0}-{1}-{2}', env.REPO_NAME, inputs.commit, steps.timestamp.outputs.ts) }}
           path: |
             continuous_analysis_over_time_results.csv
             continuous_analysis_over_time_violations_filtered.csv
