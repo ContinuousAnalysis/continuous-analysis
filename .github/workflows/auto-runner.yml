@@ -46,7 +46,7 @@ jobs:
 
           # Build the name prefix we expect
           if [ -n "$DISPATCH_ID" ]; then
-            ARTIFACT_PREFIX="continuous-analysis-results-history-${DISPATCH_ID}-${REPO_NAME}-"
+            ARTIFACT_PREFIX="continuous-analysis-history-results-${DISPATCH_ID}-${REPO_NAME}-"
           else
             ARTIFACT_PREFIX="continuous-analysis-results-${REPO_NAME}-"
           fi
