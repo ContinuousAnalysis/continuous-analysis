@@ -155,7 +155,9 @@ if not first_time_running and parent_sha:
 else:
     parent_sha = ''
     violations_parent_commit = []
-    violations_current_commit_filtered = violations_current_commit
+    violations_current_commit_filtered = []
+    for violation in violations_current_commit_tuples:
+        violations_current_commit_filtered.append(f"{violation[0]}:{violation[1]}:{violation[2]}")
     print("No parent commit found or first time running. No filtering done.")
 
 # Store the filtered violations in a new csv file
