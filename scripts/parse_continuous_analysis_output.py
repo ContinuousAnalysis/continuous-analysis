@@ -301,7 +301,7 @@ def create_base_data_structure(project, algorithm):
         'events': '',
     })
 
-def results_csv_file(lines, timestamp):
+def results_csv_file(lines, commit_sha, timestamp):
     """
     Write results to a CSV file
 
@@ -328,6 +328,12 @@ def results_csv_file(lines, timestamp):
             # Remove the execution problems key if it exists (older version, not used anymore)
             if 'execution_problems' in line:
                 del line['execution_problems']
+
+            # Add the commit_sha to the line
+            line['commit_sha'] = commit_sha
+
+            # Add the timestamp to the line
+            line['timestamp'] = timestamp
 
             # Convert violations_by_location dict to string if it exists and is a dict
             if isinstance(line.get('violations_by_location'), dict):
@@ -839,7 +845,7 @@ def main(project: str, commit_sha: str):
     # Add the results to the continuous_analysis_results_${timestamp}.csv file
     print("\n====== RESULTS CSV ======\n")
     print(f'creating continuous_analysis_results_{timestamp}.csv')
-    results_csv_file(lines, timestamp)
+    results_csv_file(lines, commit_sha, timestamp)
     print(f'created continuous_analysis_results_{timestamp}.csv')
 
     # Append the results to the continuous_analysis_over_time_results.csv file
