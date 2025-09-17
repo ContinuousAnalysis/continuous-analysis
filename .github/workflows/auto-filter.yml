@@ -81,7 +81,7 @@ jobs:
 
       - name: Prepare Previous Commit Artifact for the auto-runner workflow
         if: inputs.previous_commit != ''
-        id: prepare-artifact
+        id: prepare-previous-artifact
         run: |
           # If the target artifact is found, move results file to the root of the repository
           if [ -f "previous-artifacts/continuous_analysis_over_time_results.csv" ]; then
@@ -154,7 +154,7 @@ jobs:
           unzip artifact.zip -d current-artifacts
 
       - name: Prepare Current Commit Artifact for the auto-runner workflow
-        id: prepare-artifact
+        id: prepare-current-artifact
         run: |
           # If the target artifact is found, move results file to the root of the repository
           if [ -f "current-artifacts/continuous_analysis_over_time_results.csv" ]; then
