@@ -8,6 +8,32 @@ from datetime import datetime
 import sys
 
 
+dylin_spec_dict = {
+             "PC-01": "InvalidComparisonAnalysis",
+             "PC-02": "InvalidComparisonAnalysis",
+             "PC-03": "WrongTypeAddedAnalysis",
+             "PC-04": "ChangeListWhileIterating",
+             "PC-05": "ItemInListAnalysis",
+             "SL-01": "InPlaceSortAnalysis",
+             "SL-02": "BuiltinAllAnalysis",
+             "SL-03": "StringStripAnalysis",
+             "SL-04": "StringConcatAnalysis",
+             "SL-05": "InvalidComparisonAnalysis",
+             "SL-06": "NondeterministicOrder",
+             "SL-07": "RandomParams_NoPositives",
+             "SL-08": "RandomRandrange_MustNotUseKwargs",
+             "SL-09": "Thread_OverrideRun",
+             "CF-01": "ComparisonBehaviorAnalysis",
+             "ML-01": "InconsistentPreprocessing",
+             "ML-02": "DataLeakage",
+             "ML-03": "NonFiniteValues",
+             "ML-04": "GradientExplosion",
+             "TP-01": "HostnamesTerminatesWithSlash",
+             "TP-02": "NLTK_regexp_span_tokenize",
+             "TP-03": "Requests_DataMustOpenInBinary",
+             "TP-04": "Session_DataMustOpenInBinary"}
+
+
 def get_time_from_json():
     """
     Extract time information from JSON file
@@ -152,6 +178,8 @@ def get_num_violations_from_json():
             # Add the violation to the unique violations by location
             if 'file_name:' in violation_str and 'line_num:' in violation_str:
                 file_name = violation_str.split('file_name:')[1].split(',')[0].strip()
+                if 'pymop' in file_name:
+                    file_name = file_name.split('pymop')[-1]
                 line_num = violation_str.split('line_num:')[1].split(',')[0].strip()
                 location_key = f"{spec}:{file_name}:{line_num}"
 
@@ -777,12 +805,25 @@ def main(project: str, commit_sha: str):
                         if len(l_split) < 3 or '-' not in l_split[0]:
                             continue
                         violation_number = l_split[0].strip()
+
+                        # Convert the violation number to the spec name
+                        if violation_number in dylin_spec_dict:
+                            spec_name = dylin_spec_dict[violation_number]
+                        else:
+                            raise ValueError(f'Violation number {violation_number} not found in dylin_spec_dict')
+
+                        # Form the violation location string
                         violation_file = l_split[1].strip()
+                        if 'DyLin' in violation_file:
+                            violation_file = violation_file.split('dyLin')[-1]
+                        if '.orig' in violation_file:
+                            violation_file = violation_file.replace('.orig', '')
                         violation_line = l_split[2].strip()
-                        violation_str = f"{violation_number}:{violation_file}:{violation_line}"
+
+                        violation_str = f"{spec_name}:{violation_file}:{violation_line}"
                         if violation_str not in violations_by_location:
                             violations_by_location[violation_str] = 1
-                            unique_violations[violation_number] = unique_violations.get(violation_number, 0) + 1
+                            unique_violations[spec_name] = unique_violations.get(spec_name, 0) + 1
                         else:
                             violations_by_location[violation_str] += 1
 
