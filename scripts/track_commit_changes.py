@@ -62,6 +62,9 @@ def process_patch_data(patch: PatchSet) -> dict:
     # Iterate over the patched files
     for patched_file in patch:
 
+        # Print the patched file for debugging
+        print(patched_file)
+
         # Get the old and new filenames
         if patched_file.source_file.startswith("a/"):
             old_file = patched_file.source_file[2:]  # Remove 'a/' prefix
