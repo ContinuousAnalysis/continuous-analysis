@@ -441,7 +441,7 @@ def append_to_results_over_time(lines, commit_sha, timestamp):
 def main(project: str, commit_sha: str):
     """Main function to process projects and generate results"""
     # Get the timestamp for the current run
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
     # Initialize the lines list
     lines = []
