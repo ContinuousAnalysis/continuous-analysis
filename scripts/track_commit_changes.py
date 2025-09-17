@@ -62,22 +62,25 @@ def process_patch_data(patch: PatchSet) -> dict:
     # Iterate over the patched files
     for patched_file in patch:
 
-        # Print the patched file for debugging
-        print(patched_file.source_file)
-        print(patched_file.target_file)
+        # Only process .py files
+        if not patched_file.target_file.endswith(".py"):
+            continue
 
-        # Get the old and new filenames
-        if patched_file.source_file.startswith("a/"):
-            old_file = patched_file.source_file[2:]  # Remove 'a/' prefix
-        if patched_file.target_file.startswith("b/"):
-            new_file = patched_file.target_file[2:]  # Remove 'b/' prefix
+        # Get the old and new filenames (robust to new files and deletions)
+        source_path = patched_file.source_file or ""
+        target_path = patched_file.target_file or ""
+        old_file = source_path[2:] if source_path.startswith("a/") else source_path
+        new_file = target_path[2:] if target_path.startswith("b/") else target_path
 
-        # Record renames (if the file has been renamed)
-        if old_file != new_file:
+        # Detect newly created file (no source path in diff)
+        is_new_file = source_path in ("", "/dev/null")
+
+        # Record renames (if the file has been renamed). Skip for newly created files
+        if (not is_new_file) and old_file and new_file and (old_file != new_file):
             renames[new_file] = old_file
 
-        # Use the new filename for tracking (or old if not renamed)
-        filename = new_file if old_file != new_file else old_file
+        # Use the new filename for tracking for new files or when renamed; otherwise use old
+        filename = new_file if (is_new_file or old_file != new_file) else old_file
 
         # Initialize the dict for tracking line number offsets of the old file to the new file
         file_offsets = offsets.setdefault(filename, {})
