@@ -172,9 +172,15 @@ jobs:
 
       - name: Concatenate Results Files
         run: |
-          cat continuous_analysis_over_time_results_old.csv <(tail -n +2 continuous_analysis_over_time_results_new.csv) > continuous_analysis_over_time_results.csv
-          echo "Results files concatenated successfully"
-          rm -f continuous_analysis_over_time_results_old.csv continuous_analysis_over_time_results_new.csv
+          if [ -f "continuous_analysis_over_time_results_old.csv" ]; then
+            cat continuous_analysis_over_time_results_old.csv <(tail -n +2 continuous_analysis_over_time_results_new.csv) > continuous_analysis_over_time_results.csv
+            echo "Results files concatenated successfully"
+            rm -f continuous_analysis_over_time_results_old.csv continuous_analysis_over_time_results_new.csv
+          else
+            cp continuous_analysis_over_time_results_new.csv continuous_analysis_over_time_results.csv
+            echo "No old results file found, copying new results file to the root of the repository"
+          fi
+          rm -f continuous_analysis_over_time_results_*
 
       - name: Checkout Continuous-Analysis Repository
         uses: actions/checkout@v4
