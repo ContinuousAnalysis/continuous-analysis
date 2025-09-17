@@ -40,9 +40,6 @@ jobs:
           DISPATCH_ID="${{ inputs.dispatch_id }}"
           PREVIOUS_COMMIT="${{ inputs.previous_commit }}"
 
-          # Set the repository name in the environment
-          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
-
           # Build the name prefix we expect including the commit we are looking for
           if [ -n "$DISPATCH_ID" ]; then
             ARTIFACT_PREFIX="continuous-analysis-history-results-${DISPATCH_ID}-${REPO_NAME}-${PREVIOUS_COMMIT}"
@@ -190,6 +187,10 @@ jobs:
 
       - name: Checkout Testing Repository
         run: |
+          # Set the repository name in the environment
+          REPO_NAME=$(basename "${{ inputs.project }}")
+          echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
+
           # Define the repository URL
           REPO_URL="https://github.com/${{ inputs.project }}.git"
 
