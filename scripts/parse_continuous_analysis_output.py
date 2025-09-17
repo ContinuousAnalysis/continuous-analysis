@@ -178,7 +178,9 @@ def get_num_violations_from_json():
             # Add the violation to the unique violations by location
             if 'file_name:' in violation_str and 'line_num:' in violation_str:
                 file_name = violation_str.split('file_name:')[1].split(',')[0].strip()
-                if 'pymop' in file_name:
+                if 'pymop-venv' in file_name:
+                    file_name = file_name.split('pymop-venv')[-1]
+                elif 'pymop' in file_name:
                     file_name = file_name.split('pymop')[-1]
                 line_num = violation_str.split('line_num:')[1].split(',')[0].strip()
                 location_key = f"{spec}:{file_name}:{line_num}"
@@ -814,7 +816,7 @@ def main(project: str, commit_sha: str):
 
                         # Form the violation location string
                         violation_file = l_split[1].strip()
-                        if 'DyLin' in violation_file:
+                        if 'dylin' in violation_file:
                             violation_file = violation_file.split('dylin')[-1]
                         if '.orig' in violation_file:
                             violation_file = violation_file.replace('.orig', '')
