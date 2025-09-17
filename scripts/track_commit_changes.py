@@ -63,7 +63,8 @@ def process_patch_data(patch: PatchSet) -> dict:
     for patched_file in patch:
 
         # Print the patched file for debugging
-        print(patched_file)
+        print(patched_file.source_file)
+        print(patched_file.target_file)
 
         # Get the old and new filenames
         if patched_file.source_file.startswith("a/"):
