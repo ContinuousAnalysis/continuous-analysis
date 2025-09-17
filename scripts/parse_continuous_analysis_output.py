@@ -815,7 +815,7 @@ def main(project: str, commit_sha: str):
                         # Form the violation location string
                         violation_file = l_split[1].strip()
                         if 'DyLin' in violation_file:
-                            violation_file = violation_file.split('dyLin')[-1]
+                            violation_file = violation_file.split('dylin')[-1]
                         if '.orig' in violation_file:
                             violation_file = violation_file.replace('.orig', '')
                         violation_line = l_split[2].strip()
