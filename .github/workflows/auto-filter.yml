@@ -170,7 +170,7 @@ jobs:
           # Clean up the artifact directory
           rm -rf current-artifacts/
 
-      - Name: Concatenate Results Files
+      - name: Concatenate Results Files
         run: |
           cat continuous_analysis_over_time_results_old.csv <(tail -n +2 continuous_analysis_over_time_results_new.csv) > continuous_analysis_over_time_results.csv
           echo "Results files concatenated successfully"
