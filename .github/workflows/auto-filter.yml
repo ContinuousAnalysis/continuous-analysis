@@ -9,8 +9,8 @@ on:
       current_commit:
         required: true
         type: string
-      parent_commit:
-        required: true
+      previous_commit:
+        required: false
         type: string
       dispatch_id:
         required: false
@@ -30,23 +30,24 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Download Parent Commit Artifact from Input Repository
+      - name: Download Previous Commit Artifact from Input Repository
+        if: inputs.previous_commit != ''
         env:
           GH_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
         run: |
           # Get the repository name and dispatch IDfrom the input
           REPO_NAME=$(basename "${{ inputs.project }}")
           DISPATCH_ID="${{ inputs.dispatch_id }}"
-          PARENT_COMMIT="${{ inputs.parent_commit }}"
+          PREVIOUS_COMMIT="${{ inputs.previous_commit }}"
 
           # Set the repository name in the environment
           echo "REPO_NAME=$REPO_NAME" >> $GITHUB_ENV
 
           # Build the name prefix we expect including the commit we are looking for
           if [ -n "$DISPATCH_ID" ]; then
-            ARTIFACT_PREFIX="continuous-analysis-history-results-${DISPATCH_ID}-${REPO_NAME}-${PARENT_COMMIT}"
+            ARTIFACT_PREFIX="continuous-analysis-history-results-${DISPATCH_ID}-${REPO_NAME}-${PREVIOUS_COMMIT}"
           else
-            ARTIFACT_PREFIX="continuous-analysis-results-${REPO_NAME}-${PARENT_COMMIT}-"
+            ARTIFACT_PREFIX="continuous-analysis-results-${REPO_NAME}-${PREVIOUS_COMMIT}-"
           fi
           echo "Looking for artifacts with prefix: $ARTIFACT_PREFIX"
 
@@ -78,7 +79,8 @@ jobs:
           # Unzip the artifact to the previous-artifacts directory
           unzip artifact.zip -d previous-artifacts
 
-      - name: Prepare Parent Commit Artifact for the auto-runner workflow
+      - name: Prepare Previous Commit Artifact for the auto-runner workflow
+        if: inputs.previous_commit != ''
         id: prepare-artifact
         run: |
           # If the target artifact is found, move results file to the root of the repository
