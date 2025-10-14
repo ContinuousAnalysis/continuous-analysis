@@ -61,6 +61,9 @@ cd DyLin
 pip install -r requirements.txt
 pip install .
 
+# Install pytest
+pip install pytest
+
 # Return back to the parent directory
 cd ..
 
