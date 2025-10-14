@@ -46,7 +46,8 @@ pip install pytest
 TEST_START_TIME=$(python3 -c 'import time; print(time.time())')
 
 # Run PyMOP
-timeout -k 9 3600 pytest -W ignore::DeprecationWarning > "${PROJECT}_Output.txt"
+timeout -k 9 3600 pytest -W ignore::DeprecationWarning \
+       --continue-on-collection-errors > "${PROJECT}_Output.txt"
 exit_code=$?
 
 # Process test results if no timeout occurred
