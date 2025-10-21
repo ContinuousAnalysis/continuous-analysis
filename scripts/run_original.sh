@@ -39,15 +39,19 @@ fi
 # Install the project with all optional dependencies
 pip install .
 
-#Install pytest
+#Install pytest and pytest-cov
 pip install pytest
+pip install pytest-cov
 
 # Record the start time of the test execution
 TEST_START_TIME=$(python3 -c 'import time; print(time.time())')
 
-# Run PyMOP
+# Run PyMOP with coverage
 timeout -k 9 3600 pytest -W ignore::DeprecationWarning \
-       --continue-on-collection-errors > "${PROJECT}_Output.txt"
+                         --continue-on-collection-errors \
+                         --cov=${PROJECT} \
+                         --cov-report=xml:${PROJECT}_coverage.xml \
+                         > "${PROJECT}_Output.txt"
 exit_code=$?
 
 # Process test results if no timeout occurred
