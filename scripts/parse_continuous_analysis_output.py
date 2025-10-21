@@ -6,6 +6,7 @@ from collections import Counter
 import csv
 from datetime import datetime
 import sys
+import xml.etree.ElementTree as ET
 
 
 dylin_spec_dict = {
@@ -222,6 +223,41 @@ def get_test_time(test_summary):
             if part.endswith('s') and parts[parts.index(part)-1] == "in":
                 time = part[:-1]
     return time
+
+def get_coverage_from_file(coverage_file):
+    """
+    Extract coverage information from XML coverage file
+    
+    Args:
+        coverage_file: A string containing the path to the coverage XML file
+        
+    Returns:
+        A float containing the line coverage percentage, or None if parsing fails
+    """
+    # Check if the coverage file exists
+    if not coverage_file or not os.path.isfile(coverage_file):
+        return None
+    
+    # Check if the coverage file is empty
+    if os.path.getsize(coverage_file) == 0:
+        return None
+    
+    try:
+        # Parse the XML file
+        tree = ET.parse(coverage_file)
+        root = tree.getroot()
+        
+        # Get the line-rate attribute from the coverage root element
+        line_rate = root.get('line-rate')
+        if line_rate is not None:
+            # Convert to float and return as percentage
+            return float(line_rate) * 100
+        else:
+            return None
+            
+    except (ET.ParseError, ValueError, AttributeError) as e:
+        print(f"Error parsing coverage file {coverage_file}: {e}")
+        return None
 
 def get_run_time_test_summary_from_files(result_file, output_file):
     """
@@ -497,16 +533,19 @@ def main(project: str, commit_sha: str):
     # Get the result and output files
     result_files = [f for f in files if f.endswith(f'results.txt')]
     output_files = [f for f in files if f.endswith('Output.txt')]
+    coverage_files = [f for f in files if f.endswith('coverage.xml')]
 
     # If no result or output files, print error and skip to next project
     if not result_files or not output_files:
         print(f'No original files found for {project}')
         result_file = None
         output_file = None
+        coverage_file = None
     else:
-        # Get the first result and output files
+        # Get the first result, output, and coverage files
         result_file = result_files[0]
         output_file = output_files[0]
+        coverage_file = coverage_files[0]
 
     # Get the end-to-end time and test summary
     end_to_end_time, test_summary = get_run_time_test_summary_from_files(result_file, output_file)
@@ -525,6 +564,9 @@ def main(project: str, commit_sha: str):
         print(f"No test summary found for {project} with algorithm {algorithm}")
         os.chdir('../..')
         return
+
+    # Get the coverage from the coverage file
+    coverage = get_coverage_from_file(coverage_file)
 
     # Create the base data structure
     line = create_base_data_structure(project, algorithm)
@@ -549,6 +591,12 @@ def main(project: str, commit_sha: str):
 
     # Add the post-run time
     line['post_run_time'] = '0.0'
+    
+    # Add the coverage
+    if coverage is not None:
+        line['coverage'] = str(coverage)
+    else:
+        line['coverage'] = 'x'
 
     # Add the line to the lines list
     lines.append(line)
@@ -688,6 +736,12 @@ def main(project: str, commit_sha: str):
 
                 # Add the post-run time
                 line['post_run_time'] = '0.0'
+
+                # Add the coverage
+                if coverage is not None:
+                    line['coverage'] = str(coverage)
+                else:
+                    line['coverage'] = 'x'
 
             # Add the line to the lines list
             lines.append(line)
@@ -880,6 +934,12 @@ def main(project: str, commit_sha: str):
 
         # Add the time to create the monitor
         line['time_create_monitor'] = 0.0  # DynaPyt doesn't track this
+
+        # Add the coverage
+        if coverage is not None:
+            line['coverage'] = str(coverage)
+        else:
+            line['coverage'] = 'x'
 
         # Add the line to the lines list
         lines.append(line)
