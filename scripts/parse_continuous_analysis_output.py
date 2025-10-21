@@ -540,11 +540,14 @@ def main(project: str, commit_sha: str):
         print(f'No original files found for {project}')
         result_file = None
         output_file = None
-        coverage_file = None
     else:
         # Get the first result, output, and coverage files
         result_file = result_files[0]
         output_file = output_files[0]
+
+    if not coverage_files:
+        coverage_file = None
+    else:
         coverage_file = coverage_files[0]
 
     # Get the end-to-end time and test summary
