@@ -79,6 +79,7 @@ echo "Test Time: ${TEST_TIME}s" >> $RESULTS_FILE
 
 # Copy all output files
 cp "${PROJECT}-original/${PROJECT}_Output.txt" "${PROJECT}_original_output/"
+cp "${PROJECT}-original/${PROJECT}_coverage.xml" "${PROJECT}_original_output/"
 
 # Copy the folder to local directory (remove the old one first if it exists)
 mkdir -p ./continuous-analysis-output
