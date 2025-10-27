@@ -7,6 +7,7 @@ import csv
 from datetime import datetime
 import sys
 import xml.etree.ElementTree as ET
+from git import Repo
 
 
 dylin_spec_dict = {
@@ -259,6 +260,34 @@ def get_coverage_from_file(coverage_file):
         print(f"Error parsing coverage file {coverage_file}: {e}")
         return None
 
+def get_commit_timestamp_and_message(commit_sha):
+    """
+    Get the commit timestamp and commit message from the git log
+
+    Args:
+        commit_sha: A string containing the commit SHA
+        
+    Returns:
+        A tuple containing the commit timestamp and commit message, or (None, None) if unable to retrieve
+    """
+    try:
+        # Initialize the git repository from the current directory
+        repo = Repo('.')
+        
+        # Get the commit object
+        commit = repo.commit(commit_sha)
+        
+        # Extract the timestamp and format it
+        commit_timestamp = commit.committed_datetime.strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Extract the commit message (strip any trailing newlines)
+        commit_message = commit.message.strip()
+        
+        return commit_timestamp, commit_message
+    except Exception as e:
+        print(f"Error retrieving commit information for {commit_sha}: {e}")
+        return None, None
+
 def get_run_time_test_summary_from_files(result_file, output_file):
     """
     Extract run time information from result and output files
@@ -341,6 +370,8 @@ def create_base_data_structure(project, algorithm):
         'project': project,
         'timestamp': 'x',
         'commit_sha': 'x',
+        'commit_timestamp': 'x',
+        'commit_message': 'x',
         'algorithm': algorithm,
         'passed': 0,
         'failed': 0,
@@ -349,6 +380,7 @@ def create_base_data_structure(project, algorithm):
         'xpassed': 0,
         'errors': 0,
         'time': 0.0,
+        'coverage': 'x',
         'type_project': algorithm,
         'time_instrumentation': 'x',
         'time_create_monitor': 'x',
@@ -571,6 +603,9 @@ def main(project: str, commit_sha: str):
     # Get the coverage from the coverage file
     coverage = get_coverage_from_file(coverage_file)
 
+    # Get the commit timestamp and commit message from the git log
+    commit_timestamp, commit_message = get_commit_timestamp_and_message(commit_sha)
+
     # Create the base data structure
     line = create_base_data_structure(project, algorithm)
 
@@ -601,6 +636,12 @@ def main(project: str, commit_sha: str):
     else:
         line['coverage'] = 'x'
 
+    # Add the commit timestamp to the line
+    line['commit_timestamp'] = commit_timestamp
+
+    # Add the commit message to the line
+    line['commit_message'] = commit_message
+
     # Add the line to the lines list
     lines.append(line)
 
@@ -618,6 +659,8 @@ def main(project: str, commit_sha: str):
             'project': project,
             'timestamp': 'x',
             'commit_sha': 'x',
+            'commit_timestamp': 'x',
+            'commit_message': 'x',
             'algorithm': 'pymop',
             'passed': 'x',
             'failed': 'x',
@@ -626,6 +669,7 @@ def main(project: str, commit_sha: str):
             'xpassed': 'x',
             'errors': 'x',
             'time': 'x',
+            'coverage': 'x',
             'type_project': 'pymop',
             'time_instrumentation': 'x',
             'time_create_monitor': 'x',
@@ -740,11 +784,11 @@ def main(project: str, commit_sha: str):
                 # Add the post-run time
                 line['post_run_time'] = '0.0'
 
-                # Add the coverage
-                if coverage is not None:
-                    line['coverage'] = str(coverage)
-                else:
-                    line['coverage'] = 'x'
+                # Add the commit timestamp to the line
+                line['commit_timestamp'] = commit_timestamp
+
+                # Add the commit message to the line
+                line['commit_message'] = commit_message
 
             # Add the line to the lines list
             lines.append(line)
@@ -763,6 +807,8 @@ def main(project: str, commit_sha: str):
             'project': project,
             'timestamp': 'x',
             'commit_sha': 'x',
+            'commit_timestamp': 'x',
+            'commit_message': 'x',
             'algorithm': 'dylin',
             'passed': 'x',
             'failed': 'x',
@@ -771,6 +817,7 @@ def main(project: str, commit_sha: str):
             'xpassed': 'x',
             'errors': 'x',
             'time': 'x',
+            'coverage': 'x',
             'type_project': 'dylin',
             'time_instrumentation': 'x',
             'time_create_monitor': 'x',
@@ -943,6 +990,12 @@ def main(project: str, commit_sha: str):
             line['coverage'] = str(coverage)
         else:
             line['coverage'] = 'x'
+
+        # Add the commit timestamp to the line
+        line['commit_timestamp'] = commit_timestamp
+
+        # Add the commit message to the line
+        line['commit_message'] = commit_message
 
         # Add the line to the lines list
         lines.append(line)
