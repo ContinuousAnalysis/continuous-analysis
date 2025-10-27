@@ -114,6 +114,9 @@ jobs:
 
       - name: Parse Continuous-Analysis Output for Violations
         run: |
+          # Install the requirements for the script
+          pip install -r continuous-analysis/requirements.txt
+
           # Parse the continuous-analysis-output folder
           python3 continuous-analysis/scripts/parse_continuous_analysis_output.py $REPO_NAME ${{ inputs.commit }}
 
