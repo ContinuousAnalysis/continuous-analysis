@@ -16,6 +16,16 @@ echo "Running Original Test for project: $PROJECT"
 # Go to project directory
 cd "$PROJECT-original"
 
+# Get the commit timestamp and commit message from the git log
+commit_timestamp=$(git log -1 --format="%at" HEAD)
+commit_message=$(git log -1 --format="%s" HEAD)
+echo "Commit timestamp: $commit_timestamp"
+echo "Commit message: $commit_message"
+
+# Add the commit timestamp and commit message to the output file
+echo "Commit timestamp:= $commit_timestamp" >> ${PROJECT}_commit_info.txt
+echo "Commit message:= $commit_message" >> ${PROJECT}_commit_info.txt
+
 # Install github submodules if they exist
 if [ -f .gitmodules ]; then
     git submodule update --init --recursive
@@ -80,6 +90,7 @@ echo "Test Time: ${TEST_TIME}s" >> $RESULTS_FILE
 # Copy all output files
 cp "${PROJECT}-original/${PROJECT}_Output.txt" "${PROJECT}_original_output/"
 cp "${PROJECT}-original/${PROJECT}_coverage.xml" "${PROJECT}_original_output/"
+cp "${PROJECT}-original/${PROJECT}_commit_info.txt" "${PROJECT}_original_output/"
 
 # Copy the folder to local directory (remove the old one first if it exists)
 mkdir -p ./continuous-analysis-output

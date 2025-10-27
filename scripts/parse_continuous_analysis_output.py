@@ -260,33 +260,31 @@ def get_coverage_from_file(coverage_file):
         print(f"Error parsing coverage file {coverage_file}: {e}")
         return None
 
-def get_commit_timestamp_and_message(commit_sha):
+def get_commit_timestamp_and_message(commit_info_file):
     """
     Get the commit timestamp and commit message from the git log
 
     Args:
-        commit_sha: A string containing the commit SHA
-        
+        commit_info_file: A string containing the path to the commit info file
     Returns:
         A tuple containing the commit timestamp and commit message, or (None, None) if unable to retrieve
     """
-    try:
-        # Initialize the git repository from the current directory
-        repo = Repo('.')
-        
-        # Get the commit object
-        commit = repo.commit(commit_sha)
-        
-        # Extract the timestamp and format it
-        commit_timestamp = commit.committed_datetime.strftime("%Y-%m-%d %H:%M:%S")
-        
-        # Extract the commit message (strip any trailing newlines)
-        commit_message = commit.message.strip()
-        
-        return commit_timestamp, commit_message
-    except Exception as e:
-        print(f"Error retrieving commit information for {commit_sha}: {e}")
+    # Check if the commit info file exists
+    if not commit_info_file or not os.path.isfile(commit_info_file):
         return None, None
+    
+    # Check if the commit info file is empty
+    if os.path.getsize(commit_info_file) == 0:
+        return None, None
+    
+    # Open the commit info file and read the commit timestamp and commit message
+    with open(commit_info_file, 'r') as file:
+        for line in file:
+            if 'Commit timestamp:=' in line:
+                commit_timestamp = line.replace('Commit timestamp:= ', '').strip()
+            if 'Commit message:=' in line:
+                commit_message = line.replace('Commit message:= ', '').strip()
+    return commit_timestamp, commit_message
 
 def get_run_time_test_summary_from_files(result_file, output_file):
     """
@@ -566,6 +564,7 @@ def main(project: str, commit_sha: str):
     result_files = [f for f in files if f.endswith(f'results.txt')]
     output_files = [f for f in files if f.endswith('Output.txt')]
     coverage_files = [f for f in files if f.endswith('coverage.xml')]
+    commit_info_files = [f for f in files if f.endswith('commit_info.txt')]
 
     # If no result or output files, print error and skip to next project
     if not result_files or not output_files:
@@ -581,6 +580,11 @@ def main(project: str, commit_sha: str):
         coverage_file = None
     else:
         coverage_file = coverage_files[0]
+
+    if not commit_info_files:
+        commit_info_file = None
+    else:
+        commit_info_file = commit_info_files[0]
 
     # Get the end-to-end time and test summary
     end_to_end_time, test_summary = get_run_time_test_summary_from_files(result_file, output_file)
@@ -604,7 +608,7 @@ def main(project: str, commit_sha: str):
     coverage = get_coverage_from_file(coverage_file)
 
     # Get the commit timestamp and commit message from the git log
-    commit_timestamp, commit_message = get_commit_timestamp_and_message(commit_sha)
+    commit_timestamp, commit_message = get_commit_timestamp_and_message(commit_info_file)
 
     # Create the base data structure
     line = create_base_data_structure(project, algorithm)
