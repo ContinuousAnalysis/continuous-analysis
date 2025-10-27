@@ -36,6 +36,12 @@ timestamp = df[df['commit_sha'] == current_sha]['timestamp'].iloc[0]
 # Get the coverage of the current commit
 coverage = df[df['commit_sha'] == current_sha]['coverage'].iloc[0]
 
+# Get the commit timestamp of the current commit
+commit_timestamp = df[df['commit_sha'] == current_sha]['commit_timestamp'].iloc[0]
+
+# Get the commit message of the current commit
+commit_message = df[df['commit_sha'] == current_sha]['commit_message'].iloc[0]
+
 # Combine the violations from the current commit for both PyMOP and DyLin
 pymop_value = df_current_commit[df_current_commit['algorithm'] == 'pymop']['violations_by_location'].iloc[0] if not df_current_commit[df_current_commit['algorithm'] == 'pymop'].empty else None
 dylin_value = df_current_commit[df_current_commit['algorithm'] == 'dylin']['violations_by_location'].iloc[0] if not df_current_commit[df_current_commit['algorithm'] == 'dylin'].empty else None
@@ -167,9 +173,11 @@ else:
 # Store the filtered violations in a new csv file
 line = OrderedDict({
     'timestamp': timestamp,
-    'coverage': coverage,
     'current_commit_sha': current_sha,
     'parent_commit_sha': parent_sha,
+    'current_commit_timestamp': commit_timestamp,
+    'current_commit_message': commit_message,
+    'coverage': coverage,
     'num_new_violations': len(violations_current_commit_filtered),
     'new_violations': ';'.join(violations_current_commit_filtered),
     'num_current_violations': len(violations_current_commit),
