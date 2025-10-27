@@ -11,12 +11,7 @@ from track_commit_changes import track_changes
 # Usage: python track_commit_changes.py <repo_path> <current_commit_sha>
 repo_path = sys.argv[1]
 current_sha = sys.argv[2]
-
-# Get the parent sha of the current commit
-# This allows us to compare the current commit with its immediate predecessor
-repo = Repo(repo_path)
-commit = repo.commit(current_sha)
-parent_sha = commit.parents[0].hexsha if commit.parents else None
+parent_sha = sys.argv[3]
 
 # Print the project info for debugging
 print(f"Project path: {repo_path}")
