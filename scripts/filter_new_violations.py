@@ -11,7 +11,10 @@ from track_commit_changes import track_changes
 # Usage: python track_commit_changes.py <repo_path> <current_commit_sha>
 repo_path = sys.argv[1]
 current_sha = sys.argv[2]
-parent_sha = sys.argv[3]
+if len(sys.argv) > 3:
+    parent_sha = sys.argv[3]
+else:
+    parent_sha = None
 
 # Print the project info for debugging
 print(f"Project path: {repo_path}")
@@ -48,7 +51,10 @@ for violation in violations_current_commit:
     violations_current_commit_tuples.append((spec, filepath, line_num))
 
 # Filter the rows where the commit_sha is the parent commit
-df_parent_commit = df[df['commit_sha'] == parent_sha]
+if parent_sha:
+    df_parent_commit = df[df['commit_sha'] == parent_sha]
+else:
+    df_parent_commit = pd.DataFrame()
 
 # Check if there is any row in the parent commit dataframe
 if df_parent_commit.empty:
