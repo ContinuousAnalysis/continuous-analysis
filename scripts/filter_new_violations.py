@@ -105,6 +105,9 @@ if not first_time_running and parent_sha:
                 # Remove the last 5 characters of the filepath (.orig)
                 filepath = filepath[:-5]
 
+            print(filepath)
+            print(change['new_file_changes'].keys())
+
             # Check if the filepath has been changed
             if filepath in changes['new_file_changes'].keys():
                 checked_status = False
