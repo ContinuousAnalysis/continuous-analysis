@@ -106,7 +106,7 @@ if not first_time_running and parent_sha:
                 filepath = filepath[:-5]
 
             print(filepath)
-            print(change['new_file_changes'].keys())
+            print(changes['new_file_changes'].keys())
 
             # Check if the filepath has been changed
             if filepath in changes['new_file_changes'].keys():
