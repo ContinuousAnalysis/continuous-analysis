@@ -128,6 +128,8 @@ if not first_time_running and parent_sha:
 
                     # Iterate through all the violations in the parent commit
                     for violation_parent in violations_parent_commit_tuples:
+                        print(violation_parent)
+
                         # If the filepath matched
                         if old_filepath in violation_parent[1]:
 
