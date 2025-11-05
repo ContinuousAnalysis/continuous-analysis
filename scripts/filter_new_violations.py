@@ -89,6 +89,7 @@ if not first_time_running and parent_sha:
 
     # Filter the violations_current_commit_tuples to only include new violations that are not in the parent commit
     violations_current_commit_tuples_filtered = []
+    violations_parent_commit_tuples_filtered = []
     for violation in violations_current_commit_tuples:
         spec = violation[0]
         filepath = violation[1]
@@ -97,6 +98,8 @@ if not first_time_running and parent_sha:
         if 'python3' in filepath or 'site-packages' in filepath:
             if violation not in violations_parent_commit_tuples:
                 violations_current_commit_tuples_filtered.append(violation)
+            else:
+                violations_parent_commit_tuples_filtered.append(violation)
         else:  # If the violation is from the testing repository
             if '-pymop/' in filepath:
                 filepath = filepath.split('-pymop/')[1]
@@ -111,15 +114,15 @@ if not first_time_running and parent_sha:
 
             # Check if the filepath has been changed
             if filepath in changes['new_file_changes'].keys():
-                checked_status = False
+                changed_status = False
                 # If the file has been changed, check if the line number is in the changed range
                 for start, end in changes['new_file_changes'][filepath]:
                     if line_num >= start and line_num <= end:
                         violations_current_commit_tuples_filtered.append(violation)
-                        checked_status = True
+                        changed_status = True
                         break
                 # If the line number is not in the changed range, check if the violation is in the parent commit
-                if not checked_status:
+                if not changed_status:
 
                     # Declare a variable to check if the violation is in the parent commit
                     violation_in_parent_commit = False
@@ -150,6 +153,7 @@ if not first_time_running and parent_sha:
                             # Check if the offseted line number matched the line number of the current commit
                             if offseted_line_num == line_num and spec == violation_parent[0]:
                                 violation_in_parent_commit = True
+                                violations_parent_commit_tuples_filtered.append(violation_parent)
                                 break
                     
                     # If the violation is not in the parent commit, add it to the filtered list
@@ -160,17 +164,24 @@ if not first_time_running and parent_sha:
             else:
                 if violation not in violations_parent_commit_tuples:
                     violations_current_commit_tuples_filtered.append(violation)
+                else:
+                    violations_parent_commit_tuples_filtered.append(violation)
 
     # Convert the filtered violations to a string
     violations_current_commit_filtered = []
     for violation in violations_current_commit_tuples_filtered:
         violations_current_commit_filtered.append(f"{violation[0]}:{violation[1]}:{violation[2]}")
+    violations_parent_commit_filtered = []
+    for violation in violations_parent_commit_tuples:
+        if violation not in violations_parent_commit_tuples_filtered:
+            violations_parent_commit_filtered.append(f"{violation[0]}:{violation[1]}:{violation[2]}")
 
 # If the parent commit is not found, set the parent commit to an empty string and the filtered violations to an empty list
 else:
     parent_sha = ''
     violations_parent_commit = []
     violations_current_commit_filtered = []
+    violations_parent_commit_filtered = []
     for violation in violations_current_commit_tuples:
         violations_current_commit_filtered.append(f"{violation[0]}:{violation[1]}:{violation[2]}")
     print("No parent commit found or first time running. No filtering done.")
@@ -185,6 +196,8 @@ line = OrderedDict({
     'coverage': coverage,
     'num_new_violations': len(violations_current_commit_filtered),
     'new_violations': ';'.join(violations_current_commit_filtered),
+    'num_old_violations': len(violations_parent_commit_filtered),
+    'old_violations': ';'.join(violations_parent_commit_filtered),
     'num_current_violations': len(violations_current_commit),
     'current_violations': ';'.join(violations_current_commit),
     'num_parent_violations': len(violations_parent_commit),
