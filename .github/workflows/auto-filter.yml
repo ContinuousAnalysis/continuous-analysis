@@ -45,9 +45,9 @@ jobs:
 
           # Build the name prefix we expect including the commit we are looking for
           if [ -n "$DISPATCH_ID" ]; then
-            ARTIFACT_PREFIX="continuous-analysis-history-results-${DISPATCH_ID}-${REPO_NAME}-${PREVIOUS_COMMIT}"
+            ARTIFACT_PREFIX="continuous-analysis-history-filtered-results-${DISPATCH_ID}-${REPO_NAME}-${PREVIOUS_COMMIT}"
           else
-            ARTIFACT_PREFIX="continuous-analysis-results-${REPO_NAME}-${PREVIOUS_COMMIT}-"
+            ARTIFACT_PREFIX="continuous-analysis-filtered-results-${REPO_NAME}-${PREVIOUS_COMMIT}-"
           fi
           echo "Looking for artifacts with prefix: $ARTIFACT_PREFIX"
 
@@ -236,7 +236,7 @@ jobs:
       - name: Upload Violation Reports
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.dispatch_id != '' && (inputs.skip_commits_pattern != null && format('continuous-analysis-history-results-{0}-{1}-{2}-filtered-{3}', inputs.dispatch_id, env.REPO_NAME, inputs.current_commit, inputs.skip_commits_pattern) || format('continuous-analysis-history-results-{0}-{1}-{2}-filtered', inputs.dispatch_id, env.REPO_NAME, inputs.current_commit)) || format('continuous-analysis-results-{0}-{1}-filtered-{2}', env.REPO_NAME, inputs.current_commit, steps.timestamp.outputs.ts) }}
+          name: ${{ inputs.dispatch_id != '' && (inputs.skip_commits_pattern != null && format('continuous-analysis-history-filtered-results-{0}-{1}-{2}-{3}', inputs.dispatch_id, env.REPO_NAME, inputs.current_commit, inputs.skip_commits_pattern) || format('continuous-analysis-history-filtered-results-{0}-{1}-{2}', inputs.dispatch_id, env.REPO_NAME, inputs.current_commit)) || format('continuous-analysis-filtered-results-{0}-{1}-filtered-{2}', env.REPO_NAME, inputs.current_commit, steps.timestamp.outputs.ts) }}
           path: |
             continuous_analysis_over_time_results.csv
             continuous_analysis_over_time_violations_filtered.csv
