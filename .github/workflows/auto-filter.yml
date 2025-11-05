@@ -17,7 +17,7 @@ on:
         type: string
       skip_commits_pattern:
         required: false
-        type: number
+        type: string
     secrets:
       ORG_WIDE_TOKEN:
         required: true
