@@ -240,4 +240,4 @@ jobs:
           path: |
             continuous_analysis_over_time_results.csv
             continuous_analysis_over_time_violations_filtered.csv
-          retention-days: 30
+          retention-days: 90

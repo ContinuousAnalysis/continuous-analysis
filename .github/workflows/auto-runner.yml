@@ -135,4 +135,4 @@ jobs:
             continuous_analysis_over_time_results.csv
             continuous_analysis_results_*.csv
             continuous-analysis-output/
-          retention-days: 30
+          retention-days: 90
