@@ -788,6 +788,12 @@ def main(project: str, commit_sha: str):
                 # Add the post-run time
                 line['post_run_time'] = '0.0'
 
+                # Add the coverage
+                if coverage is not None:
+                    line['coverage'] = str(coverage)
+                else:
+                    line['coverage'] = 'x'
+
                 # Add the commit timestamp to the line
                 line['commit_timestamp'] = commit_timestamp
 
