@@ -113,14 +113,17 @@ if not first_time_running and parent_sha:
                 filepath = filepath[1:]
 
             # Check if the filepath has been changed
-            if filepath in changes['new_file_changes'].keys():
+            if filepath in changes['new_file_changes'].keys() or filepath in changes['renames'].keys():
                 changed_status = False
+
                 # If the file has been changed, check if the line number is in the changed range
-                for start, end in changes['new_file_changes'][filepath]:
-                    if line_num >= start and line_num <= end:
-                        violations_current_commit_tuples_filtered.append(violation)
-                        changed_status = True
-                        break
+                if filepath in changes['new_file_changes'].keys():
+                    for start, end in changes['new_file_changes'][filepath]:
+                        if line_num >= start and line_num <= end:
+                            violations_current_commit_tuples_filtered.append(violation)
+                            changed_status = True
+                            break
+
                 # If the line number is not in the changed range, check if the violation is in the parent commit
                 if not changed_status:
 
