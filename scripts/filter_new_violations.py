@@ -113,7 +113,7 @@ if not first_time_running and parent_sha:
                 filepath = filepath[1:]
 
             # Check if the filepath has been changed
-            if filepath in changes['new_file_changes'].keys() or filepath in changes['renames'].keys():
+            if filepath in changes['renames'].keys() or filepath in changes['offsets'].keys() or filepath in changes['new_file_changes'].keys():
                 changed_status = False
 
                 # If the file has been changed, check if the line number is in the changed range
