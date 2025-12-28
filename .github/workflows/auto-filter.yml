@@ -34,53 +34,61 @@ jobs:
 
     steps:
       - name: Download Previous Commit Artifact from Input Repository
-        if: inputs.previous_commit != ''
+        id: download-previous-artifact
         env:
           GH_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
         run: |
-          # Get the repository name and dispatch IDfrom the input
-          REPO_NAME=$(basename "${{ inputs.project }}")
-          DISPATCH_ID="${{ inputs.dispatch_id }}"
-          PREVIOUS_COMMIT="${{ inputs.previous_commit }}"
+          if [ -n "${{ inputs.previous_commit }}" ]; then
+            # Get the repository name and dispatch ID from the input
+            REPO_NAME=$(basename "${{ inputs.project }}")
+            DISPATCH_ID="${{ inputs.dispatch_id }}"
+            PREVIOUS_COMMIT="${{ inputs.previous_commit }}"
 
-          # Build the name prefix we expect including the commit we are looking for
-          if [ -n "$DISPATCH_ID" ]; then
-            ARTIFACT_PREFIX="continuous-analysis-history-filtered-results-${DISPATCH_ID}-${REPO_NAME}-${PREVIOUS_COMMIT}"
+            # Build the name prefix we expect including the commit we are looking for
+            if [ -n "$DISPATCH_ID" ]; then
+              ARTIFACT_PREFIX="continuous-analysis-history-filtered-results-${DISPATCH_ID}-${REPO_NAME}-${PREVIOUS_COMMIT}"
+            else
+              ARTIFACT_PREFIX="continuous-analysis-filtered-results-${REPO_NAME}-${PREVIOUS_COMMIT}-"
+            fi
+            echo "Looking for artifacts with prefix: $ARTIFACT_PREFIX"
+
+            # Get the target artifact from the input repository
+            ARTIFACT_JSON=$(gh api "repos/${{ inputs.project }}/actions/artifacts" --paginate)
+
+            # Get the target artifact from the input repository
+            ARTIFACT_INFO=$(echo "$ARTIFACT_JSON" | jq -r --arg PREFIX "$ARTIFACT_PREFIX" '.artifacts[] | select(.name | startswith($PREFIX)) | [.name, .created_at, .id] | @tsv' | sort -k2 -r | head -n 1)
+            
+            # Extract name and ID from the result
+            ARTIFACT_NAME=$(echo "$ARTIFACT_INFO" | cut -f1)
+            ARTIFACT_ID=$(echo "$ARTIFACT_INFO" | cut -f3)
+
+            # If no artifact is found, skip the download
+            if [ -z "$ARTIFACT_ID" ]; then
+              echo "No matching artifact found for ${{ inputs.project }}. Skipping download."
+              echo "PREVIOUS_COMMIT_ARTIFACT_FOUND=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+
+            # If the target artifact is found, download it
+            echo "Found previous artifact: $ARTIFACT_NAME (ID: $ARTIFACT_ID) for ${{ inputs.project }}"
+            curl -L \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ inputs.project }}/actions/artifacts/$ARTIFACT_ID/zip" \
+              -o artifact.zip
+
+            # Unzip the artifact to the previous-artifacts directory
+            unzip artifact.zip -d previous-artifacts
+
+            # Set the previous commit artifact found to true
+            echo "PREVIOUS_COMMIT_ARTIFACT_FOUND=true" >> $GITHUB_OUTPUT
           else
-            ARTIFACT_PREFIX="continuous-analysis-filtered-results-${REPO_NAME}-${PREVIOUS_COMMIT}-"
+            echo "No previous commit provided, skipping download"
+            echo "PREVIOUS_COMMIT_ARTIFACT_FOUND=false" >> $GITHUB_OUTPUT
           fi
-          echo "Looking for artifacts with prefix: $ARTIFACT_PREFIX"
-
-          # Get the target artifact from the input repository
-          ARTIFACT_JSON=$(gh api "repos/${{ inputs.project }}/actions/artifacts" --paginate)
-
-          # Get the target artifact from the input repository
-          ARTIFACT_INFO=$(echo "$ARTIFACT_JSON" | jq -r --arg PREFIX "$ARTIFACT_PREFIX" '.artifacts[] | select(.name | startswith($PREFIX)) | [.name, .created_at, .id] | @tsv' | sort -k2 -r | head -n 1)
-          
-          # Extract name and ID from the result
-          ARTIFACT_NAME=$(echo "$ARTIFACT_INFO" | cut -f1)
-          ARTIFACT_ID=$(echo "$ARTIFACT_INFO" | cut -f3)
-
-          # If no artifact is found, skip the download
-          if [ -z "$ARTIFACT_ID" ]; then
-            echo "No matching artifact found for ${{ inputs.project }}. Skipping download."
-            mkdir -p previous-artifacts
-            exit 0
-          fi
-
-          # If the target artifact is found, download it
-          echo "Found previous artifact: $ARTIFACT_NAME (ID: $ARTIFACT_ID) for ${{ inputs.project }}"
-          curl -L \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ inputs.project }}/actions/artifacts/$ARTIFACT_ID/zip" \
-            -o artifact.zip
-
-          # Unzip the artifact to the previous-artifacts directory
-          unzip artifact.zip -d previous-artifacts
 
       - name: Prepare Previous Commit Artifact for the auto-runner workflow
-        if: inputs.previous_commit != ''
+        if: steps.download-previous-artifact.outputs.PREVIOUS_COMMIT_ARTIFACT_FOUND == 'true'
         id: prepare-previous-artifact
         run: |
           # If the target artifact is found, move results file to the root of the repository
@@ -112,7 +120,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.ORG_WIDE_TOKEN }}
         run: |
-          # Get the repository name and dispatch IDfrom the input
+          # Get the repository name and dispatch ID from the input
           REPO_NAME=$(basename "${{ inputs.project }}")
           DISPATCH_ID="${{ inputs.dispatch_id }}"
           CURRENT_COMMIT="${{ inputs.current_commit }}"
@@ -221,7 +229,11 @@ jobs:
 
           # Only run the script if a commit is provided
           if [ -n "${{ inputs.current_commit }}" ]; then
-            python3 continuous-analysis/scripts/filter_new_violations.py $REPO_NAME-original ${{ inputs.current_commit }} ${{ inputs.previous_commit }}
+            if [ "${{ steps.download-previous-artifact.outputs.PREVIOUS_COMMIT_ARTIFACT_FOUND }}" == "true" ]; then
+              python3 continuous-analysis/scripts/filter_new_violations.py $REPO_NAME-original ${{ inputs.current_commit }} ${{ inputs.previous_commit }}
+            else
+              python3 continuous-analysis/scripts/filter_new_violations.py $REPO_NAME-original ${{ inputs.current_commit }}
+            fi
           else
             echo "No commit provided, skipping change tracking"
           fi
