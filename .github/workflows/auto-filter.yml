@@ -12,9 +12,14 @@ on:
       previous_commit:
         required: false
         type: string
+      dispatch_type:
+        required: false
+        type: string
+        default: ""
       dispatch_id:
         required: false
         type: string
+        default: ""
       skip_commits_pattern:
         required: false
         type: string
@@ -46,7 +51,11 @@ jobs:
 
             # Build the name prefix we expect including the commit we are looking for
             if [ -n "$DISPATCH_ID" ]; then
-              ARTIFACT_PREFIX="continuous-analysis-history-filtered-results-${DISPATCH_ID}-${REPO_NAME}-${PREVIOUS_COMMIT}"
+              if [ "${{ inputs.dispatch_type }}" == "history" ]; then
+                ARTIFACT_PREFIX="continuous-analysis-history-filtered-results-${DISPATCH_ID}-${REPO_NAME}-${PREVIOUS_COMMIT}"
+              else
+                ARTIFACT_PREFIX="continuous-analysis-prs-filtered-base-results-${DISPATCH_ID}-${REPO_NAME}-${PREVIOUS_COMMIT}"
+              fi
             else
               ARTIFACT_PREFIX="continuous-analysis-future-filtered-results-${REPO_NAME}-${PREVIOUS_COMMIT}-"
             fi
@@ -127,7 +136,11 @@ jobs:
 
           # Build the name prefix we expect including the commit we are looking for
           if [ -n "$DISPATCH_ID" ]; then
-            ARTIFACT_PREFIX="continuous-analysis-history-results-${DISPATCH_ID}-${REPO_NAME}-${CURRENT_COMMIT}"
+            if [ "${{ inputs.dispatch_type }}" == "history" ]; then
+              ARTIFACT_PREFIX="continuous-analysis-history-results-${DISPATCH_ID}-${REPO_NAME}-${CURRENT_COMMIT}"
+            else
+              ARTIFACT_PREFIX="continuous-analysis-prs-results-${DISPATCH_ID}-${REPO_NAME}-${CURRENT_COMMIT}"
+            fi
           else
             ARTIFACT_PREFIX="continuous-analysis-results-${REPO_NAME}-${CURRENT_COMMIT}-"
           fi
@@ -248,7 +261,7 @@ jobs:
       - name: Upload Violation Reports
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.dispatch_id != '' && format('continuous-analysis-history-filtered-results-{0}-{1}-{2}-{3}', inputs.dispatch_id, env.REPO_NAME, inputs.current_commit, inputs.skip_commits_pattern) || format('continuous-analysis-future-filtered-results-{0}-{1}-{2}', env.REPO_NAME, inputs.current_commit, steps.timestamp.outputs.ts) }}
+          name: ${{ inputs.dispatch_type == 'history' && inputs.dispatch_id && format('continuous-analysis-history-filtered-results-{0}-{1}-{2}-{3}', inputs.dispatch_id, env.REPO_NAME, inputs.current_commit, inputs.skip_commits_pattern) || inputs.dispatch_type == 'prs' && inputs.dispatch_id && inputs.previous_commit && format('continuous-analysis-prs-filtered-results-{0}-{1}-{2}-{3}', inputs.dispatch_id, env.REPO_NAME, inputs.current_commit, inputs.previous_commit) || inputs.dispatch_type == 'prs' && inputs.dispatch_id && inputs.previous_commit == "" && format('continuous-analysis-prs-filtered-base-results-{0}-{1}-{2}', inputs.dispatch_id, env.REPO_NAME, inputs.current_commit) || format('continuous-analysis-filtered-results-{0}-{1}-{2}', env.REPO_NAME, inputs.current_commit, steps.timestamp.outputs.ts) }}
           path: |
             continuous_analysis_over_time_results.csv
             continuous_analysis_over_time_violations_filtered.csv
