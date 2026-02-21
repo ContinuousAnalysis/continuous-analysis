@@ -9,6 +9,10 @@ on:
       commit:
         required: true
         type: string
+      dispatch_type:
+        required: false
+        type: string
+        default: ""
       dispatch_id:
         required: false
         type: string
