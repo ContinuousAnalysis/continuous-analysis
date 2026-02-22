@@ -344,7 +344,17 @@ def get_test_summary(test_summary, time, line):
 
             # Iterate over the keys in the line and update the line with the test summary
             for key in line.keys():
-                if key in parts[i].lower():
+                if key == 'errors' and ('errors' in parts[i].lower() or 'error' in parts[i].lower()):
+                    try:
+                        line[key] = int(parts[i-1])
+                    except ValueError:
+                        pass
+                elif key == 'failed' and 'failed' in parts[i].lower() and 'xfailed' not in parts[i].lower():
+                    try:
+                        line[key] = int(parts[i-1])
+                    except ValueError:
+                        pass
+                elif key in parts[i].lower():
                     try:
                         line[key] = int(parts[i-1])
                     except ValueError:
